@@ -6,18 +6,23 @@ import java.sql.SQLException;
 
 /*
    싱그론으로 구현할거기때문에 생성자로 접근할 수 없습니다.
-
+    ex Connection conn = MySql.getMySql.getConnection();
  */
 public class MySql implements DataBase{
     private static final String URL      = "jdbc:mysql://localhost:3306/kimdoolim";
     private static final String USER     = "root";
     private static final String PASSWORD = "1111";
 
-    private final MySql mySql = new MySql();
+    private static final MySql mySql;
+
+    static {
+        mySql = new MySql();
+    }
 
     private MySql() { }
 
-    public MySql getMySql() {
+    // 인터페이스랑 별개로 싱글톤 접근용 static 메소드 따로
+    public static MySql getMySql() {
         return mySql;
     }
 
