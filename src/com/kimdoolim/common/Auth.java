@@ -31,7 +31,7 @@ public class Auth {
         Connection conn = db.getConnection();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String sql = "select * from User where id = ? and password = ?";
+        String sql = "SELECT * FROM USER WHERE ID = ? AND PASSWORD = ?";
 
         User user = null;
         int result = 0;
