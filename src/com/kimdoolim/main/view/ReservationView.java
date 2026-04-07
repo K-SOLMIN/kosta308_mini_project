@@ -296,13 +296,16 @@ public class ReservationView {
   // 날짜 입력
   // ─────────────────────────────────────────────────────
   private LocalDate inputDate() {
-    System.out.print("예약 날짜를 입력하세요 (예: 2026-04-10): ");
+    // 오늘 날짜를 yyyy-MM-dd 형식으로 변환해서 예시에 넣기
+    String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+    System.out.print("예약 날짜를 입력하세요 (예: " + today + "): ");
     String input = scanner.nextLine().trim();
 
     try {
       return LocalDate.parse(input, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     } catch (DateTimeParseException e) {
-      System.out.println("날짜 형식이 올바르지 않습니다. (예: 2026-04-10)");
+      System.out.println("날짜 형식이 올바르지 않습니다. (예: " + today + ")");
       return null;
     }
   }
