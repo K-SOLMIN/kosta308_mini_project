@@ -12,11 +12,21 @@ import java.util.Scanner;
 public class ReservationView {
 
   private final ReservationService reservationService = new ReservationService();
-  private final Scanner scanner = new Scanner(System.in);
+
+
+  // ─────────────────────────────────────────────────────
+  // Scanner를 외부(MainView)에서 받아서 씀
+  // → Scanner를 여러 개 만들면 System.in 충돌이 나서
+  //   한 개만 만들어서 공유하는 방식으로 변경
+  // ─────────────────────────────────────────────────────
+  private final Scanner scanner;
+
+  public ReservationView(Scanner scanner) {
+    this.scanner = scanner;
+  }
 
   // ─────────────────────────────────────────────────────
   // 예약하기 메뉴
-  // MainView 1번(예약하기) 클릭 시 진입
   // ─────────────────────────────────────────────────────
   public void reservationMenu() {
     while (true) {
@@ -44,7 +54,6 @@ public class ReservationView {
 
   // ─────────────────────────────────────────────────────
   // 예약 내역 확인 메뉴
-  // MainView 3번(예약 내역 확인) 클릭 시 진입
   // ─────────────────────────────────────────────────────
   public void reservationHistoryMenu() {
     while (true) {
@@ -70,6 +79,7 @@ public class ReservationView {
 
   // ─────────────────────────────────────────────────────
   // 내 예약 목록 출력
+  // status '대기' → '승인 대기중' 으로 표시
   // ─────────────────────────────────────────────────────
   public void showMyReservations() {
     System.out.println("\n[내 예약 목록]");
@@ -81,10 +91,10 @@ public class ReservationView {
       return;
     }
 
-    System.out.println("────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-12s %-8s %-6s %-15s %-6s%n",
+    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.printf("%-4s %-12s %-8s %-6s %-15s %-10s%n",
         "번호", "예약날짜", "교시", "구분", "시설/비품명", "상태");
-    System.out.println("────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────");
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -93,29 +103,27 @@ public class ReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
-      System.out.printf("%-4d %-12s %-8s %-6s %-15s %-6s%n",
+      // '대기' → '승인 대기중' 으로 표시
+      String statusDisplay = r.getStatus().equals("대기") ? "승인 대기중" : r.getStatus();
+
+      System.out.printf("%-4d %-12s %-8s %-6s %-15s %-10s%n",
           i + 1,
           r.getReservationDate().toString(),
           r.getPeriod().getPeriodName(),
           r.getTargetType().equals("FACILITY") ? "시설" : "비품",
           targetName,
-          r.getStatus()
+          statusDisplay
       );
     }
-    System.out.println("────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────");
   }
 
   // ─────────────────────────────────────────────────────
   // 반납 신청 흐름
-  // 1. 반납 가능 목록 출력 (status = '승인' 인 것만)
-  // 2. 번호 선택
-  // 3. 이상 여부 입력
-  // 4. 반납 완료
   // ─────────────────────────────────────────────────────
   private void returnReservationFlow() {
     System.out.println("\n[반납 신청]");
 
-    // 반납 가능한 목록 조회 (승인 상태인 것만)
     List<Reservation> list = reservationService.getReturnableReservations();
 
     if (list.isEmpty()) {
@@ -123,15 +131,13 @@ public class ReservationView {
       return;
     }
 
-    // 반납 가능 목록 출력
-    System.out.println("────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────");
     System.out.printf("%-4s %-12s %-8s %-6s %-15s%n",
         "번호", "예약날짜", "교시", "구분", "시설/비품명");
-    System.out.println("────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────");
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
-
       String targetName = r.getTargetType().equals("FACILITY")
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
@@ -144,14 +150,11 @@ public class ReservationView {
           targetName
       );
     }
-    System.out.println("────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────");
 
-    // 번호 선택
     System.out.print("반납할 번호 선택 (0: 뒤로): ");
     int index = readInt();
-
     if (index == 0) return;
-
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
       return;
@@ -159,7 +162,6 @@ public class ReservationView {
 
     Reservation target = list.get(index - 1);
 
-    // 이상 여부 입력
     System.out.print("반납할 물품에 이상이 있나요? (Y/N): ");
     String hasIssue = scanner.nextLine().trim().toUpperCase();
 
@@ -172,29 +174,43 @@ public class ReservationView {
       condition = "정상";
     }
 
-    // 반납 처리
     String msg = reservationService.returnReservation(target.getReservationId(), condition);
     System.out.println(">> " + msg);
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 예약 신청 흐름
+  // 날짜 입력 → 교시 선택 → 교시 즉시 유효성 체크
+  // → 시설 선택 → 목적 입력 → 확인 → 신청
   // ─────────────────────────────────────────────────────
   private void facilityReservationFlow() {
     System.out.println("\n[시설 예약 신청]");
 
+    // 1. 날짜 입력
     LocalDate date = inputDate();
     if (date == null) return;
 
+    // 2. 교시 선택
     Period period = selectPeriod();
     if (period == null) return;
 
+    // 3. 교시 선택 직후 즉시 유효성 체크
+    //    지난 교시이거나 연도 초과면 바로 오류 출력하고 종료
+    String validationError = reservationService.validateDateAndPeriod(date, period);
+    if (validationError != null) {
+      System.out.println(">> " + validationError);
+      return;
+    }
+
+    // 4. 시설 선택
     Facility facility = selectFacility();
     if (facility == null) return;
 
+    // 5. 목적 입력
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();
 
+    // 6. 최종 확인
     System.out.println("\n── 예약 정보 확인 ──────────────────");
     System.out.println(" 날짜  : " + date);
     System.out.println(" 교시  : " + period.getPeriodName()
@@ -217,22 +233,36 @@ public class ReservationView {
 
   // ─────────────────────────────────────────────────────
   // 비품 예약 신청 흐름
+  // 날짜 입력 → 교시 선택 → 교시 즉시 유효성 체크
+  // → 비품 선택 → 목적 입력 → 확인 → 신청
   // ─────────────────────────────────────────────────────
   private void equipmentReservationFlow() {
     System.out.println("\n[비품 예약 신청]");
 
+    // 1. 날짜 입력
     LocalDate date = inputDate();
     if (date == null) return;
 
+    // 2. 교시 선택
     Period period = selectPeriod();
     if (period == null) return;
 
+    // 3. 교시 선택 직후 즉시 유효성 체크
+    String validationError = reservationService.validateDateAndPeriod(date, period);
+    if (validationError != null) {
+      System.out.println(">> " + validationError);
+      return;
+    }
+
+    // 4. 비품 선택
     Equipment equipment = selectEquipment();
     if (equipment == null) return;
 
+    // 5. 목적 입력
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();
 
+    // 6. 최종 확인
     System.out.println("\n── 예약 정보 확인 ──────────────────");
     System.out.println(" 날짜  : " + date);
     System.out.println(" 교시  : " + period.getPeriodName()
@@ -270,9 +300,7 @@ public class ReservationView {
 
     System.out.print("취소할 예약 번호 입력 (0: 뒤로): ");
     int index = readInt();
-
     if (index == 0) return;
-
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
       return;
@@ -293,12 +321,10 @@ public class ReservationView {
   }
 
   // ─────────────────────────────────────────────────────
-  // 날짜 입력
+  // 날짜 입력 - 오늘 날짜를 예시로 표시
   // ─────────────────────────────────────────────────────
   private LocalDate inputDate() {
-    // 오늘 날짜를 yyyy-MM-dd 형식으로 변환해서 예시에 넣기
     String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
     System.out.print("예약 날짜를 입력하세요 (예: " + today + "): ");
     String input = scanner.nextLine().trim();
 
