@@ -2,9 +2,10 @@ package com.kimdoolim.manager;
 
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
+import com.kimdoolim.dto.BlockPeriod;
 import java.sql.*;
-import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BlockPeriodController {
     private static final BlockPeriodController instance = new BlockPeriodController();
@@ -13,135 +14,149 @@ public class BlockPeriodController {
     private BlockPeriodController() {}
     public static BlockPeriodController getBlockPeriodController() { return instance; }
 
-    // 목록 조회
-    public List<Map<String, Object>> getAllBlockMasters() {
+    // [1] 모든 제한 일정 조회 (ID 오름차순)
+    public List<BlockPeriod> getAllBlockPeriods() {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<BlockPeriod> blockList = new ArrayList<>();
         try {
-            pstmt = conn.prepareStatement("SELECT * FROM block_period ORDER BY block_period_id DESC");
+            String sql = "SELECT * FROM block_period ORDER BY block_period_id ASC";
+            pstmt = conn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", rs.getLong("block_period_id"));
-                map.put("start", rs.getDate("block_period_startdate").toLocalDate());
-                map.put("end", rs.getDate("block_period_enddate").toLocalDate());
-                map.put("desc", rs.getString("block_period_description"));
-                list.add(map);
+                blockList.add(BlockPeriod.builder()
+                        .blockPeriodId(rs.getInt("block_period_id"))
+                        .startDate(rs.getDate("block_period_startdate").toLocalDate())
+                        .endDate(rs.getDate("block_period_enddate").toLocalDate())
+                        .description(rs.getString("block_period_description"))
+                        .build());
             }
         } catch (SQLException e) { e.printStackTrace(); }
         finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
-        return list;
+        return blockList;
     }
 
-    // 마스터 생성 (만들어만 두기)
-    public int enrollBlockMaster(LocalDate start, LocalDate end, String desc) {
+    // [2] 제한 일정 등록 (명칭 기반)
+    public int enrollBlockPeriod(BlockPeriod blockPeriod) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        int generatedId = 0;
         try {
-            pstmt = conn.prepareStatement("INSERT INTO block_period (block_period_startdate, block_period_enddate, block_period_description) VALUES (?, ?, ?)");
-            pstmt.setDate(1, java.sql.Date.valueOf(start));
-            pstmt.setDate(2, java.sql.Date.valueOf(end));
-            pstmt.setString(3, desc);
-            int res = pstmt.executeUpdate();
+            String sql = "INSERT INTO block_period (block_period_startdate, block_period_enddate, block_period_description) VALUES (?, ?, ?)";
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setDate(1, Date.valueOf(blockPeriod.getStartDate()));
+            pstmt.setDate(2, Date.valueOf(blockPeriod.getEndDate()));
+            pstmt.setString(3, blockPeriod.getDescription());
+            pstmt.executeUpdate();
+
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) generatedId = rs.getInt(1);
             conn.commit();
-            return res;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
-        finally { mysql.close(pstmt); mysql.close(conn); }
+        } catch (SQLException e) { mysql.rollback(conn); e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return generatedId;
     }
 
-    // 일괄 적용 (All items) - EQUIPMENT 테이블명 수정
-    public int applyBlockToAll(long masterId) {
+    // [3] 모든 시설/비품 일괄 차단 (상세 등록)
+    public int applyBlockToAllResources(int blockPeriodId) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
-        int count = 0;
+        int totalCount = 0;
         try {
             conn.setAutoCommit(false);
             // 시설 전체 추가
             pstmt = conn.prepareStatement("INSERT INTO block_period_detail (block_period_id, facility_id) SELECT ?, facility_id FROM facility");
-            pstmt.setLong(1, masterId);
-            count += pstmt.executeUpdate();
+            pstmt.setInt(1, blockPeriodId);
+            totalCount += pstmt.executeUpdate();
             mysql.close(pstmt);
 
-            // 비품 전체 추가 (EQUIPMENT_MASTER -> EQUIPMENT 수정)
+            // 비품 전체 추가 (테이블/컬럼명 재확인)
             pstmt = conn.prepareStatement("INSERT INTO block_period_detail (block_period_id, equipment_id) SELECT ?, equipment_id FROM equipment");
-            pstmt.setLong(1, masterId);
-            count += pstmt.executeUpdate();
+            pstmt.setInt(1, blockPeriodId);
+            totalCount += pstmt.executeUpdate();
 
             conn.commit();
-        } catch (SQLException e) { mysql.rollback(conn); }
-        finally { mysql.close(pstmt); mysql.close(conn); }
-        return count;
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            e.printStackTrace();
+            return 0;
+        } finally { mysql.close(pstmt); mysql.close(conn); }
+        return totalCount;
     }
 
-    // 개별 적용
-    public int enrollBlockDetail(long masterId, String type, long targetId) {
-        Connection conn = mysql.getConnection();
-        PreparedStatement pstmt = null;
-        String sql = type.equals("F") ?
-                "INSERT INTO block_period_detail (block_period_id, facility_id) VALUES (?, ?)" :
-                "INSERT INTO block_period_detail (block_period_id, equipment_id) VALUES (?, ?)";
-        try {
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, masterId);
-            pstmt.setLong(2, targetId);
-            int res = pstmt.executeUpdate();
-            conn.commit();
-            return res;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
-        finally { mysql.close(pstmt); mysql.close(conn); }
-    }
-
-    // 단건 조회
-    public Map<String, Object> getBlockPeriodByDescription(String desc) {
+    // [4] 명칭(Description)으로 일정 정보 조회
+    public BlockPeriod getBlockByDescription(String description) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        Map<String, Object> map = null;
+        BlockPeriod blockPeriod = null;
         try {
             pstmt = conn.prepareStatement("SELECT * FROM block_period WHERE block_period_description = ?");
-            pstmt.setString(1, desc);
+            pstmt.setString(1, description);
             rs = pstmt.executeQuery();
             if (rs.next()) {
-                map = new HashMap<>();
-                map.put("id", rs.getLong("block_period_id"));
-                map.put("start", rs.getDate("block_period_startdate").toLocalDate());
-                map.put("end", rs.getDate("block_period_enddate").toLocalDate());
+                blockPeriod = BlockPeriod.builder()
+                        .blockPeriodId(rs.getInt("block_period_id"))
+                        .startDate(rs.getDate("block_period_startdate").toLocalDate())
+                        .endDate(rs.getDate("block_period_enddate").toLocalDate())
+                        .description(rs.getString("block_period_description"))
+                        .build();
             }
         } catch (SQLException e) { e.printStackTrace(); }
         finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
-        return map;
+        return blockPeriod;
     }
 
-    // 수정
-    public int updateBlockMaster(String oldDesc, LocalDate start, LocalDate end, String nDesc) {
+    // [5] 명칭 기반 수정
+    public int updateBlockPeriod(String targetDescription, BlockPeriod updatedData) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("UPDATE block_period SET block_period_startdate=?, block_period_enddate=?, block_period_description=? WHERE block_period_description=?");
-            pstmt.setDate(1, java.sql.Date.valueOf(start));
-            pstmt.setDate(2, java.sql.Date.valueOf(end));
-            pstmt.setString(3, nDesc);
-            pstmt.setString(4, oldDesc);
-            int res = pstmt.executeUpdate();
+            String sql = "UPDATE block_period SET block_period_startdate=?, block_period_enddate=?, block_period_description=? WHERE block_period_description=?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setDate(1, Date.valueOf(updatedData.getStartDate()));
+            pstmt.setDate(2, Date.valueOf(updatedData.getEndDate()));
+            pstmt.setString(3, updatedData.getDescription());
+            pstmt.setString(4, targetDescription);
+
+            int result = pstmt.executeUpdate();
             conn.commit();
-            return res;
+            return result;
         } catch (SQLException e) { mysql.rollback(conn); return 0; }
         finally { mysql.close(pstmt); mysql.close(conn); }
     }
 
-    // 삭제
-    public int deleteBlockMasterByDesc(String desc) {
+    public int applyBlockToSpecificResource(int blockPeriodId, String resourceType, String resourceName) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
+
+        // 타입에 따라 시설 테이블(facility) 또는 비품 테이블(equipment)에서 ID를 조회해 INSERT
+        String sql = "";
+        if (resourceType.equals("F")) {
+            sql = "INSERT INTO block_period_detail (block_period_id, facility_id) " +
+                    "SELECT ?, facility_id FROM facility WHERE facility_name = ?";
+        } else {
+            sql = "INSERT INTO block_period_detail (block_period_id, equipment_id) " +
+                    "SELECT ?, equipment_id FROM equipment WHERE equipment_name = ?";
+        }
+
         try {
-            pstmt = conn.prepareStatement("DELETE FROM block_period WHERE block_period_description = ?");
-            pstmt.setString(1, desc);
-            int res = pstmt.executeUpdate();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, blockPeriodId);
+            pstmt.setString(2, resourceName);
+
+            int result = pstmt.executeUpdate();
             conn.commit();
-            return res;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
-        finally { mysql.close(pstmt); mysql.close(conn); }
+            return result;
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            e.printStackTrace();
+            return 0;
+        } finally {
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
     }
 }
