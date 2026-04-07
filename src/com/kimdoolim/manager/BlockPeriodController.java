@@ -136,10 +136,10 @@ public class BlockPeriodController {
         String sql = "";
         if (resourceType.equals("F")) {
             sql = "INSERT INTO block_period_detail (block_period_id, facility_id) " +
-                    "SELECT ?, facility_id FROM facility WHERE facility_name = ?";
+                    "SELECT ?, facility_id FROM facility WHERE name = ?";
         } else {
             sql = "INSERT INTO block_period_detail (block_period_id, equipment_id) " +
-                    "SELECT ?, equipment_id FROM equipment WHERE equipment_name = ?";
+                    "SELECT ?, equipment_id FROM equipment WHERE name = ?";
         }
 
         try {
