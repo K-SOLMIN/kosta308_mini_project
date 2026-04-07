@@ -10,11 +10,12 @@ import java.util.Scanner;
 public class ManagerReservationView {
 
   private final ReservationService reservationService = new ReservationService();
-  // AppScanner에서 공통 Scanner 가져오기
   private final Scanner scanner = AppScanner.getScanner();
 
   // ─────────────────────────────────────────────────────
   // 관리자 예약 관리 메뉴
+  // 상위/중간 관리자 둘 다 이 메뉴 사용
+  // Service에서 권한에 따라 자동으로 분기됨
   // ─────────────────────────────────────────────────────
   public void managerReservationMenu() {
     while (true) {
@@ -40,6 +41,8 @@ public class ManagerReservationView {
 
   // ─────────────────────────────────────────────────────
   // 예약 승인 / 반려 흐름
+  // 상위 관리자 → 전체 대기 예약 목록
+  // 중간 관리자 → 담당 시설/비품 대기 예약 목록만
   // ─────────────────────────────────────────────────────
   private void approveOrRejectFlow() {
     System.out.println("\n[예약 승인 / 반려]");
@@ -95,6 +98,8 @@ public class ManagerReservationView {
 
   // ─────────────────────────────────────────────────────
   // 예약 강제 취소 흐름
+  // 상위 관리자 → 전체 승인 예약 목록
+  // 중간 관리자 → 담당 시설/비품 승인 예약 목록만
   // ─────────────────────────────────────────────────────
   private void forceCancelFlow() {
     System.out.println("\n[예약 강제 취소]");
