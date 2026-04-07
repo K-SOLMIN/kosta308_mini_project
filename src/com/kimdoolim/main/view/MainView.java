@@ -37,6 +37,7 @@ public class MainView {
                     break;
                 case 4:
                     System.out.println(">> [예약 하기]로 이동합니다.");
+                    new ReservationView().reservationMenu();
 
                     break;
                 case 0:
@@ -75,8 +76,8 @@ public class MainView {
 
                 case 3:
                     System.out.println(">> [예약 내역 확인] 으로 이동합니다.");
-                    new ReservationView().showMyReservations();
-
+                    // 예약 내역 + 반납 신청 메뉴로 진입
+                    new ReservationView().reservationHistoryMenu();
                     break;
 
                 case 0:
