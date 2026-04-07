@@ -114,12 +114,10 @@ public class EquipmentManageView {
             System.out.println(" [" + i + "번 낱개 정보 입력]");
             System.out.print("시리얼 번호 : ");
             String serialNo = scanner.nextLine();
-            System.out.print("상태 (정상 / 수리 / 점검 / 분실) : ");
-            String status = scanner.nextLine();
 
             details.add(EquipmentDetail.builder()
                     .serialNo(serialNo)
-                    .status(status)
+                    .status("정상")
                     .checkDelete(false)
                     .build());
         }

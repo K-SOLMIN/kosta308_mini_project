@@ -20,6 +20,7 @@ public class FacilityManageView {
             System.out.println(" 1. 시설 등록");
             System.out.println(" 2. 시설 수정");
             System.out.println(" 3. 시설 삭제");
+            System.out.println(" 4. 시설 조회");
             System.out.println(" 0. 뒤로 가기");
             System.out.println("=============================");
             System.out.print("메뉴 선택 : ");

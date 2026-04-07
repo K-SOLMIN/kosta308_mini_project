@@ -27,7 +27,7 @@ public class ManagerDetailView {
                     break;
                 case 2:
                     System.out.println(">> 비품 관리로 이동합니다.");
-
+                    new EquipmentManageView().equipmentManageView();
                     break;
                 case 0:
                     System.out.println(">> 이전 메뉴로 돌아갑니다.");
