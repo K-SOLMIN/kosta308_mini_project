@@ -32,7 +32,9 @@ public class BlockPeriodController {
                         .description(rs.getString("block_period_description"))
                         .build());
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
         return blockList;
     }
@@ -54,8 +56,15 @@ public class BlockPeriodController {
             rs = pstmt.getGeneratedKeys();
             if (rs.next()) generatedId = rs.getInt(1);
             conn.commit();
-        } catch (SQLException e) { mysql.rollback(conn); e.printStackTrace(); }
-        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            e.printStackTrace();
+        }
+        finally {
+            mysql.close(rs);
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
         return generatedId;
     }
 
@@ -82,7 +91,10 @@ public class BlockPeriodController {
             mysql.rollback(conn);
             e.printStackTrace();
             return 0;
-        } finally { mysql.close(pstmt); mysql.close(conn); }
+        } finally {
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
         return totalCount;
     }
 
@@ -104,8 +116,13 @@ public class BlockPeriodController {
                         .description(rs.getString("block_period_description"))
                         .build();
             }
-        } catch (SQLException e) { e.printStackTrace(); }
-        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            mysql.close(rs);
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
         return blockPeriod;
     }
 
@@ -124,8 +141,13 @@ public class BlockPeriodController {
             int result = pstmt.executeUpdate();
             conn.commit();
             return result;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
-        finally { mysql.close(pstmt); mysql.close(conn); }
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            return 0;
+        } finally {
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
     }
 
     public int applyBlockToSpecificResource(int blockPeriodId, String resourceType, String resourceName) {
