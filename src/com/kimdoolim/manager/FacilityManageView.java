@@ -6,6 +6,7 @@ import com.kimdoolim.dto.Facility;
 import java.util.Scanner;
 
 public class FacilityManageView {
+    FacilityController controller = FacilityController.getFacilityController();
 
     public void facilityManageView() {
         Scanner scanner = new Scanner(System.in);
@@ -46,6 +47,7 @@ public class FacilityManageView {
     }
 
     public void facilityEnrollView() {
+        int result = 0;
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("=============================");
@@ -98,7 +100,7 @@ public class FacilityManageView {
                     .isDelete(false)
                     .build();
 
-            // facilityService.insert(facility);
+            result = controller.enrollFacility();
             System.out.println(">> 시설이 등록되었습니다.");
         } else {
             System.out.println(">> 등록을 취소합니다.");

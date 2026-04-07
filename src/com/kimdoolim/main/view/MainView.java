@@ -2,10 +2,12 @@ package com.kimdoolim.main.view;
 
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.User;
+import com.kimdoolim.manager.ManagerDetailView;
 
 import java.util.Scanner;
 
 public class MainView {
+    ManagerDetailView managerView = new ManagerDetailView();
 
     public void managerMainView() {
         Scanner scanner = new Scanner(System.in);
@@ -31,7 +33,7 @@ public class MainView {
                     break;
                 case 3:
                     System.out.println(">> [시설&비품 관리]로 이동합니다.");
-
+                    managerView.manageChoiceView();
                     break;
                 case 4:
                     System.out.println(">> [예약 하기]로 이동합니다.");
