@@ -100,7 +100,7 @@ public class FacilityManageView {
                     .isDelete(false)
                     .build();
 
-            result = controller.enrollFacility();
+            result = controller.enrollFacility(facility);
             System.out.println(">> 시설이 등록되었습니다.");
         } else {
             System.out.println(">> 등록을 취소합니다.");
