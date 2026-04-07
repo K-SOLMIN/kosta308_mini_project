@@ -167,4 +167,6 @@ public class ReservationService {
     int result = reservationDAO.forcecancelReservation(reservationId, reason);
     return result > 0 ? "예약이 강제 취소되었습니다." : "강제 취소 처리 중 오류가 발생했습니다.";
   }
+
+
 }
