@@ -193,4 +193,30 @@ public class FacilityController {
 
         return result;
     }
+
+    public int deleteFacility(long facilityId) {
+        PreparedStatement pstmt = null;
+        int result = 0;
+        Connection conn = mysql.getConnection();
+
+        String sql = "UPDATE facility SET is_delete = TRUE, deletedate = NOW() WHERE facility_id = ?";
+
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, facilityId);
+
+            result = pstmt.executeUpdate();
+            conn.commit();
+            System.out.println(">> 시설 삭제 완료!");
+
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            System.out.println(">> 시설 삭제 실패: " + e.getMessage());
+        } finally {
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
+
+        return result;
+    }
 }

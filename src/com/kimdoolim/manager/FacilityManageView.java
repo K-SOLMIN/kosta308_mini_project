@@ -250,4 +250,56 @@ public class FacilityManageView {
             System.out.println(">> 수정을 취소합니다.");
         }
     }
+
+    public void facilityDeleteView() {
+        Scanner scanner = new Scanner(System.in);
+        User loginUser = Auth.getUserInfo();
+
+        System.out.println("=============================");
+        System.out.println("         시설 삭제            ");
+        System.out.println("=============================");
+        System.out.print("삭제할 시설 이름 : ");
+        String searchName = scanner.nextLine();
+
+        Facility facility = controller.getFacilityByName(searchName);
+
+        if (facility == null) {
+            System.out.println(">> 해당 시설을 찾을 수 없습니다.");
+            return;
+        }
+
+        // 권한 체크
+        if (loginUser.getPermission() == Permission.MIDDLEADMIN) {
+            if (facility.getUser().getUserId() != loginUser.getUserId()) {
+                System.out.println(">> 해당 시설에 대한 삭제 권한이 없습니다.");
+                return;
+            }
+        }
+
+        // 삭제할 시설 정보 출력
+        System.out.println("=============================");
+        System.out.println("삭제할 시설 정보");
+        System.out.println("=============================");
+        System.out.println(" 시설 이름    : " + facility.getName());
+        System.out.println(" 위치         : " + facility.getLocation());
+        System.out.println(" 최대 수용    : " + facility.getMaxCapacity() + "명");
+        System.out.println(" 예약 단위    : " + facility.getMaxReservationUnit());
+        System.out.println(" 최대 예약    : " + facility.getMaxReservationValue());
+        System.out.println(" 상태         : " + facility.getStatus());
+        System.out.println("=============================");
+        System.out.print("정말 삭제하시겠습니까? (1. 예 / 0. 아니오) : ");
+
+        int confirm = scanner.nextInt();
+
+        if (confirm == 1) {
+            int result = controller.deleteFacility(facility.getFacilityId());
+            if (result > 0) {
+                System.out.println(">> 시설이 삭제되었습니다.");
+            } else {
+                System.out.println(">> 시설 삭제 실패.");
+            }
+        } else {
+            System.out.println(">> 삭제를 취소합니다.");
+        }
+    }
 }
