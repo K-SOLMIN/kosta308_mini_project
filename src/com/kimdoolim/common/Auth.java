@@ -27,11 +27,11 @@ public class Auth {
         현재 로그인시도중인 프로세스에서 로그인되도록..
     */
     public static int login(String userId, String userPwd) {
-        Database db = MySql.getMySql();
+        DataBase db = MySql.getMySql();
         Connection conn = db.getConnection();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String sql = "select * from user where id = ? and password = ?";
+        String sql = "SELECT * FROM user WHERE ID = ? AND PASSWORD = ?";
 
         User user = null;
         int result = 0;
