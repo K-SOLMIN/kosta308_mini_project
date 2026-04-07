@@ -1,6 +1,6 @@
 package com.kimdoolim.dao;
 
-import com.kimdoolim.common.DataBase;
+import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.Equipment;
 import com.kimdoolim.dto.Facility;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class FacilityEquipmentDAO {
 
-  private final DataBase db = MySql.getMySql();
+  private final Database db = MySql.getMySql();
 
   // ─────────────────────────────────────────────────────
   // 1. 전체 시설 목록 조회
