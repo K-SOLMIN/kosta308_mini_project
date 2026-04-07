@@ -14,7 +14,7 @@ public class MainView {
             System.out.println("========================================================================");
             System.out.println("                             관리자 메인 메뉴                              ");
             System.out.println("========================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 사용자 관리 || 3. 마이페이지 || 4. 예약하기 || 0. 종료");
+            System.out.println(" 1. 예약 관리 || 2. 사용자 관리 || 3. 시설&비품 관리 || 4. 예약하기 || 0. 종료");
             System.out.println("========================================================================");
             System.out.print("메뉴 선택 : ");
 
@@ -22,19 +22,19 @@ public class MainView {
 
             switch (choice) {
                 case 1:
-                    System.out.println(">> 예약 관리 메뉴로 이동합니다.");
+                    System.out.println(">> [예약 관리] 메뉴로 이동합니다.");
 
                     break;
                 case 2:
-                    System.out.println(">> 사용자 관리 메뉴로 이동합니다.");
+                    System.out.println(">> [사용자 관리] 메뉴로 이동합니다.");
 
                     break;
                 case 3:
-                    System.out.println(">> 마이페이지로 이동합니다.");
+                    System.out.println(">> [시설&비품 관리]로 이동합니다.");
 
                     break;
                 case 4:
-                    System.out.println(">> 예약 하기로 이동합니다.");
+                    System.out.println(">> [예약 하기]로 이동합니다.");
 
                     break;
                 case 0:
