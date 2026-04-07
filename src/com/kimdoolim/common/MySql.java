@@ -8,7 +8,7 @@ import java.sql.SQLException;
    싱그론으로 구현할거기때문에 생성자로 접근할 수 없습니다.
     ex Connection conn = MySql.getMySql.getConnection();
  */
-public class MySql implements DataBase{
+public class MySql implements Database{
     private static final String URL      = "jdbc:mysql://localhost:3307/kimdoolim";
     private static final String USER     = "root";
     private static final String PASSWORD = "1111";

@@ -2,7 +2,7 @@ package com.kimdoolim.common;
 
 import java.sql.Connection;
 
-public interface DataBase {
+public interface Database {
     Connection getConnection();
 
     <T extends AutoCloseable>void close(T t);

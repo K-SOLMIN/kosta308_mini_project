@@ -27,7 +27,7 @@ public class Auth {
         현재 로그인시도중인 프로세스에서 로그인되도록..
     */
     public static int login(String userId, String userPwd) {
-        DataBase db = MySql.getMySql();
+        Database db = MySql.getMySql();
         Connection conn = db.getConnection();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
