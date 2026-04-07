@@ -1,6 +1,6 @@
 package com.kimdoolim.dao;
 
-import com.kimdoolim.common.DataBase;
+import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public class ReservationDAO {
 
   // MySql 싱글톤 객체 가져오기 (Auth.java 방식과 동일)
-  private final DataBase db = MySql.getMySql();
+  private final Database db = MySql.getMySql();
 
   // ─────────────────────────────────────────────────────
   // 1. 교시 전체 조회
