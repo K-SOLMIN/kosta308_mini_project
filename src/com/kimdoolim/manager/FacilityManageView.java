@@ -33,7 +33,7 @@ public class FacilityManageView {
                     break;
                 case 2:
                     System.out.println(">> 시설 수정으로 이동합니다.");
-                    //facilityUpdateView();
+                    facilityUpdateView();
                     break;
                 case 3:
                     System.out.println(">> 시설 삭제로 이동합니다.");
@@ -65,8 +65,14 @@ public class FacilityManageView {
         int maxCapacity = scanner.nextInt();
         scanner.nextLine();
 
-        System.out.print("최대 예약 단위 (HOUR / DAY / WEEK / MONTH) : ");
-        String maxReservationUnit = scanner.nextLine();
+        System.out.print("최대 예약 단위 (WEEK / DAY / MONTH / YEAR) : ");
+        String maxReservationUnit = scanner.nextLine().toUpperCase();
+
+        if (!maxReservationUnit.equals("WEEK") && !maxReservationUnit.equals("DAY")
+                && !maxReservationUnit.equals("MONTH") && !maxReservationUnit.equals("YEAR")) {
+            System.out.println(">> 올바른 예약 단위를 입력해주세요. (WEEK / DAY / MONTH / YEAR)");
+            return;
+        }
 
         System.out.print("최대 예약 가능 값 : ");
         int maxReservationValue = scanner.nextInt();
@@ -196,9 +202,14 @@ public class FacilityManageView {
         String capacityInput = scanner.nextLine();
         int maxCapacity = capacityInput.isBlank() ? facility.getMaxCapacity() : Integer.parseInt(capacityInput);
 
-        System.out.print("최대 예약 단위 [" + facility.getMaxReservationUnit() + "] : ");
-        String maxReservationUnit = scanner.nextLine();
-        if (maxReservationUnit.isBlank()) maxReservationUnit = facility.getMaxReservationUnit();
+        System.out.print("최대 예약 단위 (WEEK / DAY / MONTH / YEAR) : ");
+        String maxReservationUnit = scanner.nextLine().toUpperCase();
+
+        if (!maxReservationUnit.equals("WEEK") && !maxReservationUnit.equals("DAY")
+                && !maxReservationUnit.equals("MONTH") && !maxReservationUnit.equals("YEAR")) {
+            System.out.println(">> 올바른 예약 단위를 입력해주세요. (WEEK / DAY / MONTH / YEAR)");
+            return;
+        }
 
         System.out.print("최대 예약 가능 값 [" + facility.getMaxReservationValue() + "] : ");
         String valueInput = scanner.nextLine();
