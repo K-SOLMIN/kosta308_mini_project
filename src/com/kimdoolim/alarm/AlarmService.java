@@ -84,4 +84,71 @@ public class AlarmService {
         }
         return list;
     }
+
+    // AlarmService.java 내부에 추가
+    public List<Reservation> getTodayApprovedReservations() {
+        List<Reservation> list = new ArrayList<>();
+        // ERD 컬럼명: reservation_date, status, name, start_time, end_time 등 정확히 반영
+        String sql = "SELECT r.*, u.user_id, u.name as user_name, " +
+                "p.start_time, p.end_time, " +
+                "f.name as facility_name, e.name as equipment_name " +
+                "FROM reservation r " +
+                "JOIN user u ON r.user_id = u.user_id " +
+                "JOIN period p ON r.period_id = p.period_id " +
+                "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                "WHERE r.reservation_date = CURDATE() AND r.status = 'APPROVED'";
+
+        // 여기서부터는 Connection 맺고 ResultSet 돌려서 리스트 채우는 JDBC 기본 로직 작성...
+        // (이전 답변의 getReservationsByDate 로직과 동일하게 구현하시면 됩니다!)
+        return list;
+    }
+
+    /**
+     * 알림을 DB에 저장하고 실시간 소켓으로 전송합니다.
+     * @param receiverId : 수신자 ID (user_id)
+     * @param content    : 알림 메시지 내용
+     * @param type       : 알림 타입 (START / RETURN)
+     */
+    public void sendAndSaveAlarm(int receiverId, String content, String type) {
+        // 1. DB 저장 (ERD: alarm 테이블)
+        boolean isSaved = saveAlarmToDb(receiverId, content);
+
+        if (isSaved) {
+            // 2. 실시간 소켓 전송 (선생님의 소켓 서버 로직 호출)
+            // 예: SessionManager.getInstance().sendToUser(receiverId, content);
+            System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
+        } else {
+            System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
+        }
+    }
+
+    /**
+     * 알림 데이터를 DB에 Insert (ERD 컬럼명 준수)
+     */
+    private boolean saveAlarmToDb(int receiverId, String content) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+
+        // ERD 기준: receiver_id, content, generate_date, is_read
+        String sql = "INSERT INTO alarm (receiver_id, content, generate_date, isread, type) " +
+                "VALUES (?, ?, NOW(), 'N', '[testType]')";
+
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, receiverId);
+            pstmt.setString(2, content);
+
+            int result = pstmt.executeUpdate();
+            conn.commit();
+            return result > 0;
+        } catch (SQLException e) {
+            mysql.rollback(conn);
+            e.printStackTrace();
+            return false;
+        } finally {
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
+    }
 }

@@ -12,72 +12,76 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AlarmScheduler {
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
-    private final AlarmService service = new AlarmService();
+    private static final AlarmScheduler instance = new AlarmScheduler();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
-    public void startTestSchedule() {
-        // [1] 테스트 실행 시간 설정: 오늘 밤 10시 45분 (22:45)
+    // [수정] ReservationService 제거, AlarmService만 사용
+    private final AlarmService alarmService = new AlarmService();
+
+    private AlarmScheduler() {}
+    public static AlarmScheduler getInstance() { return instance; }
+
+    /**
+     * 알림 시스템 가동 (테스트용으로 즉시 스캔 시작되게 설정 가능)
+     */
+    public void startSchedule() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime targetTime = now.withHour(22).withMinute(45).withSecond(0).withNano(0);
-
-        // 만약 이미 10시 45분이 지났다면 테스트를 위해 1분 뒤로 설정하거나 내일로 넘김
-        if (now.isAfter(targetTime)) {
-            System.out.println("⚠️ 설정한 22:45분이 이미 지났습니다. 테스트를 위해 현재 시간 기준 10초 뒤로 재설정합니다.");
-            targetTime = now.plusSeconds(10);
-        }
+        // 테스트용: 현재 시간에서 5초 뒤에 당일 예약 전체 스캔 시작
+        LocalDateTime targetTime = now.plusSeconds(5);
 
         long initialDelay = Duration.between(now, targetTime).getSeconds();
+        scheduler.schedule(this::processDailyNotifications, initialDelay, TimeUnit.SECONDS);
 
-        // [2] 지정된 시간에 1회 실행 (테스트용이므로 반복 주기 생략 가능하지만 구조 유지)
-        scheduler.schedule(this::scheduleDailyAlarms, initialDelay, TimeUnit.SECONDS);
-
-        System.out.println("🚀 [테스트 시작] " + targetTime + "에 예약 스캔이 시작됩니다. (남은 시간: " + initialDelay + "초)");
+        System.out.println("📢 [알림 시스템] 스캐너 대기 중... (잠시 후 데이터 조회를 시작합니다)");
     }
 
-    private void scheduleDailyAlarms() {
-        System.out.println("\n[🔔 스캐너 작동] 금일 예약 목록을 조회합니다...");
+    /**
+     * 실시간 예약 승인 시 호출용 메서드
+     */
+    public void addReservationAlarm(Reservation reservation) {
+        if (reservation == null || !reservation.getReservationDate().equals(LocalDate.now())) return;
 
-        //오늘 날짜의 예약 가져오기 (DB 연동 확인 필요)
-        List<Reservation> todayReservations = service.getReservationsByDate(LocalDate.now());
+        System.out.println("🆕 [실시간 등록] 당일 예약 감지: ID " + reservation.getReservationId());
+        scheduleTask(reservation, "START", reservation.getPeriod().getStartTime());
+        scheduleTask(reservation, "RETURN", reservation.getPeriod().getEndTime());
+    }
+
+    private void processDailyNotifications() {
+        System.out.println("🔍 [데이터 조회] AlarmService를 통해 오늘자 예약을 직접 조회합니다...");
+
+        // [수정] AlarmService에 구현할 조회 메서드 호출
+        List<Reservation> todayReservations = alarmService.getTodayApprovedReservations();
 
         if (todayReservations.isEmpty()) {
-            System.out.println("❌ 오늘 예약된 건이 없습니다. 테스트 데이터(DB)를 확인해주세요.");
+            System.out.println("❌ 조회된 예약 데이터가 없습니다.");
             return;
         }
 
-        for (Reservation reservation : todayReservations) {
-            scheduleReturnReminder(reservation);
+        for (Reservation res : todayReservations) {
+            addReservationAlarm(res);
         }
     }
 
-    private void scheduleReturnReminder(Reservation reservation) {
-        // [3] 종료 시간 10분 전 알림 예약 로직
-        LocalTime endTime = reservation.getPeriod().getEndTime();
-        LocalDateTime alarmTarget = LocalDateTime.of(LocalDate.now(), endTime).minusMinutes(10);
+    private void scheduleTask(Reservation reservation, String type, LocalTime targetLocalTime) {
+        LocalDateTime alarmTime = LocalDateTime.of(LocalDate.now(), targetLocalTime).minusMinutes(10);
+        long delay = Duration.between(LocalDateTime.now(), alarmTime).getSeconds();
 
-        long delay = Duration.between(LocalDateTime.now(), alarmTarget).getSeconds();
-
-        // 테스트 편의상: 만약 종료 10분 전이 이미 지났다면, 5초 뒤에 바로 알림이 오도록 설정
-        if (delay < 0) {
-            System.out.println("⚠️ ID " + reservation.getReservationId() + "번은 이미 알림 시간이 지났습니다. 테스트를 위해 5초 뒤 즉시 발송합니다.");
-            delay = 5;
-        }
+        // 테스트 시 이미 지난 시간은 3초 뒤에 바로 실행되게 처리
+        if (delay < 0) delay = 3;
 
         scheduler.schedule(() -> {
-            sendSocketMessage(reservation);
+            String resourceName = "FACILITY".equals(reservation.getTargetType())
+                    ? reservation.getFacility().getName()
+                    : reservation.getEquipment().getName();
+
+            String message = (type.equals("START"))
+                    ? String.format("🔔 [사용 안내] '%s' 사용 10분 전입니다.", resourceName)
+                    : String.format("🔔 [반납 안내] '%s' 반납 10분 전입니다.", resourceName);
+
+            // DB 저장 및 소켓 발송
+            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, type);
+
+            System.out.println("🔔 [" + type + " 발송] " + reservation.getUser().getName() + "님께 전송 완료");
         }, delay, TimeUnit.SECONDS);
-
-        System.out.println("✅ [알림 예약 완료] 예약ID: " + reservation.getReservationId() + " / 발송 예정시간: " + alarmTarget + " (약 " + delay + "초 후)");
-    }
-
-    private void sendSocketMessage(Reservation reservation) {
-        // 자원 명칭 추출
-        String resourceName = reservation.getTargetType().equals("FACILITY")
-                ? (reservation.getFacility() != null ? reservation.getFacility().getName() : "Unknown Facility")
-                : (reservation.getEquipment() != null ? reservation.getEquipment().getName() : "Unknown Equipment");
-
-        System.out.println("\n[📢 소켓 메시지 전송 시뮬레이션]");
-        System.out.println("내용: 🔔 [반납 알림] '" + resourceName + "' 반납 시간 10분 전입니다. 정해진 시간 내에 반납해주세요.");
-        // 여기에 실제 소켓 전송 메서드 연결 (예: userSession.send(msg))
     }
 }
