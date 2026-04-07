@@ -9,7 +9,7 @@ import java.sql.SQLException;
     ex Connection conn = MySql.getMySql.getConnection();
  */
 public class MySql implements DataBase{
-    private static final String URL      = "jdbc:mysql://localhost:3306/kimdoolim";
+    private static final String URL      = "jdbc:mysql://localhost:3307/kimdoolim";
     private static final String USER     = "root";
     private static final String PASSWORD = "1111";
 
