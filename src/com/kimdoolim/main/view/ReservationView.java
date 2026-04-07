@@ -1,5 +1,6 @@
 package com.kimdoolim.main.view;
 
+import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.dto.*;
 import com.kimdoolim.service.ReservationService;
 
@@ -12,18 +13,8 @@ import java.util.Scanner;
 public class ReservationView {
 
   private final ReservationService reservationService = new ReservationService();
-
-
-  // ─────────────────────────────────────────────────────
-  // Scanner를 외부(MainView)에서 받아서 씀
-  // → Scanner를 여러 개 만들면 System.in 충돌이 나서
-  //   한 개만 만들어서 공유하는 방식으로 변경
-  // ─────────────────────────────────────────────────────
-  private final Scanner scanner;
-
-  public ReservationView(Scanner scanner) {
-    this.scanner = scanner;
-  }
+  // AppScanner에서 공통 Scanner 가져오기
+  private final Scanner scanner = AppScanner.getScanner();
 
   // ─────────────────────────────────────────────────────
   // 예약하기 메뉴
@@ -180,37 +171,29 @@ public class ReservationView {
 
   // ─────────────────────────────────────────────────────
   // 시설 예약 신청 흐름
-  // 날짜 입력 → 교시 선택 → 교시 즉시 유효성 체크
-  // → 시설 선택 → 목적 입력 → 확인 → 신청
   // ─────────────────────────────────────────────────────
   private void facilityReservationFlow() {
     System.out.println("\n[시설 예약 신청]");
 
-    // 1. 날짜 입력
     LocalDate date = inputDate();
     if (date == null) return;
 
-    // 2. 교시 선택
     Period period = selectPeriod();
     if (period == null) return;
 
-    // 3. 교시 선택 직후 즉시 유효성 체크
-    //    지난 교시이거나 연도 초과면 바로 오류 출력하고 종료
+    // 교시 선택 직후 즉시 유효성 체크
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
       return;
     }
 
-    // 4. 시설 선택
     Facility facility = selectFacility();
     if (facility == null) return;
 
-    // 5. 목적 입력
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();
 
-    // 6. 최종 확인
     System.out.println("\n── 예약 정보 확인 ──────────────────");
     System.out.println(" 날짜  : " + date);
     System.out.println(" 교시  : " + period.getPeriodName()
@@ -233,36 +216,29 @@ public class ReservationView {
 
   // ─────────────────────────────────────────────────────
   // 비품 예약 신청 흐름
-  // 날짜 입력 → 교시 선택 → 교시 즉시 유효성 체크
-  // → 비품 선택 → 목적 입력 → 확인 → 신청
   // ─────────────────────────────────────────────────────
   private void equipmentReservationFlow() {
     System.out.println("\n[비품 예약 신청]");
 
-    // 1. 날짜 입력
     LocalDate date = inputDate();
     if (date == null) return;
 
-    // 2. 교시 선택
     Period period = selectPeriod();
     if (period == null) return;
 
-    // 3. 교시 선택 직후 즉시 유효성 체크
+    // 교시 선택 직후 즉시 유효성 체크
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
       return;
     }
 
-    // 4. 비품 선택
     Equipment equipment = selectEquipment();
     if (equipment == null) return;
 
-    // 5. 목적 입력
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();
 
-    // 6. 최종 확인
     System.out.println("\n── 예약 정보 확인 ──────────────────");
     System.out.println(" 날짜  : " + date);
     System.out.println(" 교시  : " + period.getPeriodName()

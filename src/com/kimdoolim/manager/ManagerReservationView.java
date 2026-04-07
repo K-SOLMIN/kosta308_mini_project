@@ -1,5 +1,6 @@
 package com.kimdoolim.manager;
 
+import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.dto.*;
 import com.kimdoolim.service.ReservationService;
 
@@ -9,13 +10,8 @@ import java.util.Scanner;
 public class ManagerReservationView {
 
   private final ReservationService reservationService = new ReservationService();
-
-  // MainView에서 Scanner를 받아서 공유
-  private final Scanner scanner;
-
-  public ManagerReservationView(Scanner scanner) {
-    this.scanner = scanner;
-  }
+  // AppScanner에서 공통 Scanner 가져오기
+  private final Scanner scanner = AppScanner.getScanner();
 
   // ─────────────────────────────────────────────────────
   // 관리자 예약 관리 메뉴
