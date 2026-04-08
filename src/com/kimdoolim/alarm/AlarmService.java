@@ -193,7 +193,7 @@ public class AlarmService {
 
         // ERD 기준: receiver_id, content, generate_date, is_read
         String sql = "INSERT INTO alarm (receiver_id, content, generate_date, isread, type) " +
-                "VALUES (?, ?, NOW(), 'N', '[testType]')";
+                "VALUES (?, ?, NOW(), 'false', '[testType]')";
 
         try {
             pstmt = conn.prepareStatement(sql);
