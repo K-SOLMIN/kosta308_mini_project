@@ -196,12 +196,14 @@ public class ReservationDAO {
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
         "       f.name AS facility_name, " +
-        "       e.name AS equipment_name " +
+        "       e.name AS equipment_name, " +
+        "       rr.created_at AS returned_at " +
         "FROM reservation r " +
         "JOIN period p ON r.period_id = p.period_id " +
         "JOIN user u ON r.user_id = u.user_id " +
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        "LEFT JOIN return_request rr ON r.reservation_id = rr.reservation_id " +
         "WHERE r.user_id = ? " +
         "ORDER BY r.reservation_date DESC, r.created_at DESC";
 
@@ -416,7 +418,7 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     int result = 0;
 
-    String insertSql = "INSERT INTO return_request (reservation_id, condition, status, created_at) " +
+    String insertSql = "INSERT INTO return_request (reservation_id, `condition`, status, created_at) " +
         "VALUES (?, ?, '반납완료', ?)";
     String updateSql = "UPDATE reservation SET status = '반납완료' WHERE reservation_id = ?";
 
@@ -472,11 +474,11 @@ public class ReservationDAO {
 
   // ─────────────────────────────────────────────────────
   // 17. 제한 기간 체크
-  //     예약 날짜가 block_period 안에 있고,
-  //     해당 시설 or 비품이 block_period_detail에 등록돼 있으면
-  //     제한 사유(description)를 반환, 없으면 null 반환
+  //     - period_id IS NULL  → 종일 제한 (교시 무관)
+  //     - period_id = 해당 교시 → 해당 교시만 제한
   // ─────────────────────────────────────────────────────
-  public String findBlockedReason(LocalDate reservationDate, Long facilityId, Long equipmentId) {
+  public String findBlockedReason(LocalDate reservationDate, int periodId,
+                                  Long facilityId, Long equipmentId) {
     Connection conn = db.getConnection();
     PreparedStatement pstmt = null;
     ResultSet rs = null;
@@ -486,16 +488,18 @@ public class ReservationDAO {
         "FROM block_period bp " +
         "JOIN block_period_detail bpd ON bp.block_period_id = bpd.block_period_id " +
         "WHERE ? BETWEEN bp.block_period_startdate AND bp.block_period_enddate " +
+        "AND (bp.period_id IS NULL OR bp.period_id = ?) " +
         "AND (bpd.facility_id = ? OR bpd.equipment_id = ?) " +
         "LIMIT 1";
 
     try {
       pstmt = conn.prepareStatement(sql);
       pstmt.setDate(1, Date.valueOf(reservationDate));
-      if (facilityId != null) pstmt.setLong(2, facilityId);
-      else pstmt.setNull(2, Types.BIGINT);
-      if (equipmentId != null) pstmt.setLong(3, equipmentId);
+      pstmt.setInt(2, periodId);
+      if (facilityId != null) pstmt.setLong(3, facilityId);
       else pstmt.setNull(3, Types.BIGINT);
+      if (equipmentId != null) pstmt.setLong(4, equipmentId);
+      else pstmt.setNull(4, Types.BIGINT);
 
       rs = pstmt.executeQuery();
       if (rs.next()) {
@@ -551,6 +555,8 @@ public class ReservationDAO {
           .facility(facility)
           .equipment(equipment)
           .user(user)
+          .returnedAt(rs.getTimestamp("returned_at") != null
+              ? rs.getTimestamp("returned_at").toLocalDateTime() : null)
           .build());
     }
     return list;
