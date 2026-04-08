@@ -172,7 +172,9 @@ public class ReservationDAO {
       pstmt.setDate(7, Date.valueOf(reservation.getReservationDate()));
       pstmt.setString(8, reservation.getTargetType());
       result = pstmt.executeUpdate();
+      db.commit(conn);
     } catch (SQLException e) {
+      db.rollback(conn);
       System.out.println("예약 저장 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -260,9 +262,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 9. 대기 중인 예약 조회 (중간 관리자용 - 담당 시설/비품만)
-  //    → facility.manager_id 또는 equipment.manager_id 가
-  //      로그인한 중간관리자 ID인 것만 조회
+  // 9. 대기 중인 예약 조회 (중간 관리자용)
   // ─────────────────────────────────────────────────────
   public List<Reservation> findPendingReservationsByManagerId(int managerId) {
     return findReservationsByStatus("'대기'", managerId);
@@ -276,7 +276,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 11. 승인된 예약 조회 (중간 관리자용 - 담당 시설/비품만)
+  // 11. 승인된 예약 조회 (중간 관리자용)
   // ─────────────────────────────────────────────────────
   public List<Reservation> findApprovedReservationsByManagerId(int managerId) {
     return findReservationsByStatus("'승인'", managerId);
@@ -284,8 +284,6 @@ public class ReservationDAO {
 
   // ─────────────────────────────────────────────────────
   // 공통 예약 조회 메서드
-  // managerId = null  → 전체 조회 (상위 관리자)
-  // managerId = 값 있음 → 담당 시설/비품만 조회 (중간 관리자)
   // ─────────────────────────────────────────────────────
   private List<Reservation> findReservationsByStatus(String status, Integer managerId) {
     List<Reservation> list = new ArrayList<>();
@@ -293,7 +291,6 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    // 중간 관리자면 담당 시설/비품 조건 추가
     String managerCondition = (managerId != null)
         ? "AND (f.manager_id = ? OR e.manager_id = ?) "
         : "";
@@ -315,13 +312,10 @@ public class ReservationDAO {
 
     try {
       pstmt = conn.prepareStatement(sql);
-
-      // 중간 관리자면 managerId 세팅
       if (managerId != null) {
         pstmt.setInt(1, managerId);
         pstmt.setInt(2, managerId);
       }
-
       rs = pstmt.executeQuery();
       list = parseReservationResultSet(rs, null);
     } catch (SQLException e) {
@@ -348,7 +342,9 @@ public class ReservationDAO {
       pstmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
       pstmt.setLong(2, reservationId);
       result = pstmt.executeUpdate();
+      db.commit(conn);
     } catch (SQLException e) {
+      db.rollback(conn);
       System.out.println("예약 승인 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -374,7 +370,9 @@ public class ReservationDAO {
       pstmt.setString(1, reason);
       pstmt.setLong(2, reservationId);
       result = pstmt.executeUpdate();
+      db.commit(conn);
     } catch (SQLException e) {
+      db.rollback(conn);
       System.out.println("예약 반려 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -400,7 +398,9 @@ public class ReservationDAO {
       pstmt.setString(1, reason);
       pstmt.setLong(2, reservationId);
       result = pstmt.executeUpdate();
+      db.commit(conn);
     } catch (SQLException e) {
+      db.rollback(conn);
       System.out.println("예약 강제 취소 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -409,7 +409,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 15. 반납 처리
+  // 15. 반납 처리 (INSERT + UPDATE 하나의 트랜잭션)
   // ─────────────────────────────────────────────────────
   public int saveReturnRequest(long reservationId, String condition) {
     Connection conn = db.getConnection();
@@ -421,6 +421,7 @@ public class ReservationDAO {
     String updateSql = "UPDATE reservation SET status = '반납완료' WHERE reservation_id = ?";
 
     try {
+
       pstmt = conn.prepareStatement(insertSql);
       pstmt.setLong(1, reservationId);
       pstmt.setString(2, condition);
@@ -431,7 +432,10 @@ public class ReservationDAO {
       pstmt = conn.prepareStatement(updateSql);
       pstmt.setLong(1, reservationId);
       result = pstmt.executeUpdate();
+
+      db.commit(conn);  // 둘 다 성공했을 때만 커밋
     } catch (SQLException e) {
+      db.rollback(conn);  // 하나라도 실패하면 둘 다 롤백
       System.out.println("반납 처리 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -456,7 +460,9 @@ public class ReservationDAO {
       pstmt.setLong(1, reservationId);
       pstmt.setInt(2, userId);
       result = pstmt.executeUpdate();
+      db.commit(conn);
     } catch (SQLException e) {
+      db.rollback(conn);
       System.out.println("예약 취소 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
