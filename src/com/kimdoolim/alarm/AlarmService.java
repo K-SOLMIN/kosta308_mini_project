@@ -88,19 +88,80 @@ public class AlarmService {
     // AlarmService.java 내부에 추가
     public List<Reservation> getTodayApprovedReservations() {
         List<Reservation> list = new ArrayList<>();
-        // ERD 컬럼명: reservation_date, status, name, start_time, end_time 등 정확히 반영
-        String sql = "SELECT r.*, u.user_id, u.name as user_name, " +
-                "p.start_time, p.end_time, " +
-                "f.name as facility_name, e.name as equipment_name " +
+
+        // ERD 물리명칭(ALARM_ID, RECEIVER_ID 등)과 DTO 필드 구조를 고려한 쿼리
+        // reservation 테이블의 모든 컬럼과 연관 테이블의 필수 정보를 JOIN
+        String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.purpose, r.target_type, r.created_at, r.approved_at, r.real_use, " +
+                "       u.user_id, u.name AS u_name, " +
+                "       p.period_id, p.start_time, p.end_time, " +
+                "       f.facility_id, f.name AS f_name, " +
+                "       e.equipment_id, e.name AS e_name " +
                 "FROM reservation r " +
                 "JOIN user u ON r.user_id = u.user_id " +
                 "JOIN period p ON r.period_id = p.period_id " +
                 "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
                 "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
-                "WHERE r.reservation_date = CURDATE() AND r.status = 'APPROVED'";
+                "WHERE r.reservation_date = CURDATE() AND r.status = '승인'";
 
-        // 여기서부터는 Connection 맺고 ResultSet 돌려서 리스트 채우는 JDBC 기본 로직 작성...
-        // (이전 답변의 getReservationsByDate 로직과 동일하게 구현하시면 됩니다!)
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // 1. User 객체 조립 (u_name 별칭 사용)
+                User user = User.builder()
+                        .userId(rs.getInt("user_id"))
+                        .name(rs.getString("u_name"))
+                        .build();
+
+                // 2. Period 객체 조립 (시간 변환 처리)
+                Period period = Period.builder()
+                        .periodId(rs.getInt("period_id"))
+                        .startTime(rs.getTime("start_time").toLocalTime())
+                        .endTime(rs.getTime("end_time").toLocalTime())
+                        .build();
+
+                // 3. Facility / Equipment 조립 (null 체크 필수)
+                Facility facility = null;
+                if (rs.getObject("facility_id") != null) {
+                    facility = Facility.builder()
+                            .facilityId(rs.getLong("facility_id")) // DTO 타입(Long) 반영
+                            .name(rs.getString("f_name"))
+                            .build();
+                }
+
+                Equipment equipment = null;
+                if (rs.getObject("equipment_id") != null) {
+                    equipment = Equipment.builder()
+                            .equipmentId(rs.getLong("equipment_id")) // DTO 타입(Long) 반영
+                            .name(rs.getString("e_name"))
+                            .build();
+                }
+
+                // 4. 메인 Reservation 객체 완성
+                Reservation reservation = Reservation.builder()
+                        .reservationId(rs.getLong("reservation_id"))
+                        .user(user)       // 객체 주입
+                        .period(period)   // 객체 주입
+                        .facility(facility)
+                        .equipment(equipment)
+                        .purpose(rs.getString("purpose"))
+                        .targetType(rs.getString("target_type"))
+                        .status(rs.getString("status"))
+                        .realUse(rs.getString("real_use"))
+                        .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                        .reservationDate(rs.getDate("reservation_date").toLocalDate())
+                        .approvedAt(rs.getTimestamp("approved_at") != null ?
+                                rs.getTimestamp("approved_at").toLocalDateTime() : null)
+                        .build();
+
+                list.add(reservation);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 오늘자 승인 예약 조회 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return list;
     }
 
