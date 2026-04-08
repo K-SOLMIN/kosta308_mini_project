@@ -15,6 +15,14 @@ import java.util.List;
 public class AlarmService {
     Database mysql = MySql.getMySql();
 
+    private static final AlarmService alarmService = new AlarmService();
+
+    private AlarmService() { }
+
+    public static AlarmService getAlarmService() {
+        return alarmService;
+    }
+
     public List<Reservation> getReservationsByDate(LocalDate date) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
@@ -211,5 +219,79 @@ public class AlarmService {
             mysql.close(pstmt);
             mysql.close(conn);
         }
+    }
+
+    public Reservation getReservationById(long reservationId) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Reservation reservation = null;
+        Connection conn = mysql.getConnection();
+
+        String sql = "SELECT r.*, " +
+                "u.user_id, u.name as user_name, " +
+                "f.facility_id, f.name as facility_name, " +
+                "e.equipment_id, e.name as equipment_name, " +
+                "p.period_id, p.start_time, p.end_time " +
+                "FROM reservation r " +
+                "JOIN user u ON r.user_id = u.user_id " +
+                "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                "JOIN period p ON r.period_id = p.period_id " +
+                "WHERE r.reservation_id = ?";
+
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, reservationId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                User user = User.builder()
+                        .userId(rs.getInt("user_id"))
+                        .name(rs.getString("user_name"))
+                        .build();
+
+                Period period = Period.builder()
+                        .periodId(rs.getInt("period_id"))
+                        .startTime(rs.getTime("start_time").toLocalTime())
+                        .endTime(rs.getTime("end_time").toLocalTime())
+                        .build();
+
+                Facility facility = null;
+                if (rs.getLong("facility_id") != 0) {
+                    facility = Facility.builder()
+                            .facilityId(rs.getLong("facility_id"))
+                            .name(rs.getString("facility_name"))
+                            .build();
+                }
+
+                Equipment equipment = null;
+                if (rs.getLong("equipment_id") != 0) {
+                    equipment = Equipment.builder()
+                            .equipmentId(rs.getLong("equipment_id"))
+                            .name(rs.getString("equipment_name"))
+                            .build();
+                }
+
+                reservation = Reservation.builder()
+                        .reservationId(rs.getLong("reservation_id"))
+                        .user(user)
+                        .period(period)
+                        .facility(facility)
+                        .equipment(equipment)
+                        .reservationDate(rs.getDate("reservation_date").toLocalDate())
+                        .targetType(rs.getString("target_type"))
+                        .status(rs.getString("status"))
+                        .build();
+            }
+
+        } catch (SQLException e) {
+            System.out.println(">> 예약 조회 실패: " + e.getMessage());
+        } finally {
+            mysql.close(rs);
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
+
+        return reservation;
     }
 }

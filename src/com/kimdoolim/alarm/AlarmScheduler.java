@@ -12,27 +12,44 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AlarmScheduler {
-    private static final AlarmScheduler instance = new AlarmScheduler();
+    private static final AlarmScheduler alarmScheduler = new AlarmScheduler();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
-    // [수정] ReservationService 제거, AlarmService만 사용
-    private final AlarmService alarmService = new AlarmService();
+    private final AlarmService alarmService = AlarmService.getAlarmService();
 
     private AlarmScheduler() {}
-    public static AlarmScheduler getInstance() { return instance; }
+    public static AlarmScheduler getAlarmScheduler() { return alarmScheduler; }
 
-    /**
-     * 알림 시스템 가동 (테스트용으로 즉시 스캔 시작되게 설정 가능)
-     */
-    public void startSchedule() {
+    //테스트용
+    public void startScheduleTest() {
         LocalDateTime now = LocalDateTime.now();
         // 테스트용: 현재 시간에서 5초 뒤에 당일 예약 전체 스캔 시작
         LocalDateTime targetTime = now.plusSeconds(5);
 
         long initialDelay = Duration.between(now, targetTime).getSeconds();
-        scheduler.schedule(this::processDailyNotifications, initialDelay, TimeUnit.SECONDS);
+        scheduler.schedule(this::getTodayApprovedReservation, initialDelay, TimeUnit.SECONDS);
 
         System.out.println("📢 [알림 시스템] 스캐너 대기 중... (잠시 후 데이터 조회를 시작합니다)");
+    }
+
+    public void startSchedule() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime targetTime = now.toLocalDate().atTime(8, 0);
+
+        if (now.isAfter(targetTime)) {
+            targetTime = targetTime.plusDays(1);
+        }
+
+        long initialDelay = Duration.between(now, targetTime).getSeconds();
+
+        scheduler.scheduleAtFixedRate(
+                this::getTodayApprovedReservation,
+                initialDelay,
+                TimeUnit.DAYS.toSeconds(1),
+                TimeUnit.SECONDS
+        );
+
+        System.out.println("📢 [알림 시스템] 매일 오전 8시에 알림 조회를 시작합니다. 다음 실행: " + targetTime);
     }
 
     /**
@@ -46,8 +63,8 @@ public class AlarmScheduler {
         scheduleTask(reservation, "RETURN", reservation.getPeriod().getEndTime());
     }
 
-    private void processDailyNotifications() {
-        System.out.println("🔍 [데이터 조회] AlarmService를 통해 오늘자 예약을 직접 조회합니다...");
+    private void getTodayApprovedReservation() {
+        System.out.println("🔍 [데이터 조회] 오늘자 승인된 알람 조회");
 
         // [수정] AlarmService에 구현할 조회 메서드 호출
         List<Reservation> todayReservations = alarmService.getTodayApprovedReservations();
