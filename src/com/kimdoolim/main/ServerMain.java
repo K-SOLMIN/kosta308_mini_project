@@ -1,7 +1,6 @@
 package com.kimdoolim.main;
 
 import com.kimdoolim.alarm.AlarmScheduler;
-import com.kimdoolim.alarm.AlarmTest;
 import com.kimdoolim.alarm.ClientManager;
 
 import java.io.IOException;
@@ -20,7 +19,7 @@ public class ServerMain {
         AlarmScheduler alarmScheduler = AlarmScheduler.getInstance();
         alarmScheduler.startSchedule(); // 스케줄러 시작
 
-        new AlarmTest().registerAndApprove(); // alarmTest
+
 
         Map<Integer, Socket> socketManager = new ConcurrentHashMap<>();
         Map<Integer, PrintWriter> outStreamManager = new ConcurrentHashMap<>();

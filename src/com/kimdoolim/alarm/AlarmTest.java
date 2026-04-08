@@ -1,11 +1,9 @@
 package com.kimdoolim.alarm;
 
+import com.kimdoolim.common.Auth;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
-import com.kimdoolim.dto.Facility;
-import com.kimdoolim.dto.Period;
-import com.kimdoolim.dto.Reservation;
-import com.kimdoolim.dto.User;
+import com.kimdoolim.dto.*;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -23,43 +21,19 @@ public class AlarmTest {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         long resId = -1;
+        int userId = 5;
+        int periodId = 8;
+        int facilityId = 1;
 
         try {
             conn = db.getConnection();
 
             // ─────────────────────────────────────────────────────
-            // [Step 0] DB에서 실제 존재하는 user_id, facility_id, period_id 자동 조회
-            // ─────────────────────────────────────────────────────
-            int userId = 0, periodId = 0;
-            long facilityId = 0;
-
-            PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.user_id, f.facility_id, p.period_id " +
-                    "FROM user u, facility f, period p LIMIT 1");
-            ResultSet r = ps.executeQuery();
-            if (r.next()) {
-                userId     = r.getInt("user_id");
-                facilityId = r.getLong("facility_id");
-                periodId   = r.getInt("period_id");
-            }
-            db.close(r);
-            db.close(ps);
-
-            if (userId == 0 || facilityId == 0 || periodId == 0) {
-                System.out.println("❌ [AlarmTest] user, facility, period 데이터가 없습니다. 테스트를 중단합니다.");
-                return;
-            }
-
-            System.out.println("🔎 [AlarmTest] 사용할 user_id=" + userId
-                + ", facility_id=" + facilityId
-                + ", period_id=" + periodId);
-
-            // ─────────────────────────────────────────────────────
             // [Step 1] 예약 DB 등록 (status: 대기)
             // ─────────────────────────────────────────────────────
             String sqlInsert = "INSERT INTO reservation " +
-                "(period_id, user_id, facility_id, purpose, created_at, reservation_date, status, real_use, target_type) " +
-                "VALUES (?, ?, ?, ?, ?, ?, '대기', 'false', 'FACILITY')";
+                    "(period_id, user_id, facility_id, purpose, created_at, reservation_date, status, real_use, target_type) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, '대기', 'false', 'FACILITY')";
 
             pstmt = conn.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, periodId);
@@ -72,8 +46,28 @@ public class AlarmTest {
             pstmt.executeUpdate();
             rs = pstmt.getGeneratedKeys();
             if (rs.next()) resId = rs.getLong(1);
-
             db.close(pstmt);
+
+            // ─────────────────────────────────────────────────────
+            // [Step 1-1] 알림 생성 - 시설 담당 중간관리자에게
+            // ─────────────────────────────────────────────────────
+
+
+            Facility targetFacility = fetchFacilityById(conn, facilityId);
+            Alarm alarm = null;
+            alarm = Alarm.builder()
+                    .type("요청")
+                    .content(Auth.getUserInfo().getName() + " 님이 " + targetFacility.getName() + " 예약을 요청했습니다")
+                    .generateDate(LocalDateTime.now())
+                    .receiverId(targetFacility.getUser().getUserId())
+                    .isRead("false")
+                    .build();
+
+
+            insertAlarm(conn, alarm);
+
+
+            new AlarmSendingManager().sendingAlarm(alarm);
 
             // ─────────────────────────────────────────────────────
             // [Step 2] 즉시 승인 처리
@@ -162,5 +156,88 @@ public class AlarmTest {
             db.close(conn);
         }
         return null;
+    }
+
+    private User fetchUserById(Connection conn, int userId) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        User user = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT * FROM user WHERE user_id = ?");
+            pstmt.setInt(1, userId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                user = User.builder()
+                        .userId(rs.getInt("user_id"))
+                        .name(rs.getString("name"))
+                        .build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            db.close(rs);
+            db.close(pstmt);
+        }
+
+        return user;
+    }
+
+    private Facility fetchFacilityById(Connection conn, long facilityId) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Facility facility = null;
+
+        try {
+            pstmt = conn.prepareStatement(
+                    "SELECT f.*, u.user_id as manager_user_id FROM facility f " +
+                            "JOIN user u ON f.manager_id = u.user_id " +
+                            "WHERE f.facility_id = ?");
+            pstmt.setLong(1, facilityId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                User manager = User.builder()
+                        .userId(rs.getInt("manager_user_id"))
+                        .build();
+
+                facility = Facility.builder()
+                        .facilityId(rs.getLong("facility_id"))
+                        .name(rs.getString("name"))
+                        .user(manager)
+                        .build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            db.close(rs);
+            db.close(pstmt);
+        }
+
+        return facility;
+    }
+
+    private void insertAlarm(Connection conn, Alarm alarm) {
+        PreparedStatement pstmt = null;
+
+        try {
+            pstmt = conn.prepareStatement(
+                    "INSERT INTO alarm (receiver_id, type, generate_date, content, isread) " +
+                            "VALUES (?, ?, ?, ?, ?)");
+            pstmt.setInt(1, alarm.getReceiverId());
+            pstmt.setString(2, alarm.getType());
+            pstmt.setTimestamp(3, Timestamp.valueOf(alarm.getGenerateDate()));
+            pstmt.setString(4, alarm.getContent());
+            pstmt.setString(5, alarm.getIsRead());
+
+            pstmt.executeUpdate();
+            System.out.println(">> 알림 전송 완료!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            db.close(pstmt);
+        }
     }
 }

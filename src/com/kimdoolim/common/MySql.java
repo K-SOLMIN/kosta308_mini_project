@@ -32,7 +32,6 @@ public class MySql implements Database {
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
             connection.setAutoCommit(false);
-            System.out.println("DB 연결 성공!");
         } catch (ClassNotFoundException e) {
             System.out.println("드라이버 로드 실패: " + e.getMessage());
         } catch (SQLException e) {

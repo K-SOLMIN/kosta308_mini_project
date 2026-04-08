@@ -1,6 +1,7 @@
 package com.kimdoolim.main;
 
 import com.kimdoolim.alarm.AlarmReceiveThread;
+import com.kimdoolim.alarm.AlarmTest;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
@@ -23,9 +24,18 @@ public class ClientMain {
         try {
             socket = new Socket("localhost", 9999);
             out = new PrintWriter(socket.getOutputStream(), true);
+            out.println(Auth.getUserInfo().getUserId());
 
             new Thread(new AlarmReceiveThread()).start();
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        //알림테스트용 스레드 잠시 멈춤
+        try {
+            Thread.sleep(5000);
+            if(Auth.getUserInfo().getUserId() == 5)  new AlarmTest().registerAndApprove(); // alarmTest
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
