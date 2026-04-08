@@ -23,7 +23,7 @@ public class LoginView {
             result = Auth.login(userId, password);
 
             if(result == 1) break;
-            else System.out.println("회원정보가 일치하지 않습니다.");
+            else System.out.println("로그인에 실패했습니다.");
         }
     }
 }

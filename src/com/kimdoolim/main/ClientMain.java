@@ -29,11 +29,6 @@ public class ClientMain {
             throw new RuntimeException(e);
         }
 
-//        if (loginUser == null) {
-//            System.out.println("로그인에 실패했습니다.");
-//            return;
-//        }
-
         // 비활성 계정 차단 (Auth.login에서 이미 막히지만 이중 체크)
         if (!loginUser.isActive()) {
             String status = loginUser.getUserStatus();
