@@ -5,6 +5,7 @@ import com.kimdoolim.dto.*;
 import com.kimdoolim.service.ReservationService;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -94,8 +95,23 @@ public class ReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
-      // '대기' → '승인 대기중' 으로 표시
-      String statusDisplay = r.getStatus().equals("대기") ? "승인 대기중" : r.getStatus();
+      // 상태 표시 변환
+      // 대기    → 승인 대기중
+      // 승인    → 오늘 날짜이고 교시 시간대 안이면 '사용중', 아니면 '승인'
+      // 나머지  → DB 값 그대로
+      String statusDisplay;
+      if (r.getStatus().equals("대기")) {
+        statusDisplay = "승인 대기중";
+      } else if (r.getStatus().equals("승인")) {
+        LocalDate today = LocalDate.now();
+        LocalTime now   = LocalTime.now();
+        boolean isToday      = r.getReservationDate().isEqual(today);
+        boolean isDuringTime = !now.isBefore(r.getPeriod().getStartTime())
+            && !now.isAfter(r.getPeriod().getEndTime());
+        statusDisplay = (isToday && isDuringTime) ? "사용중" : "승인";
+      } else {
+        statusDisplay = r.getStatus();
+      }
 
       System.out.printf("%-4d %-12s %-8s %-6s %-15s %-10s%n",
           i + 1,
@@ -175,24 +191,24 @@ public class ReservationView {
   private void facilityReservationFlow() {
     System.out.println("\n[시설 예약 신청]");
 
+    Facility facility = selectFacility();
+    if (facility == null) return;
+
     LocalDate date = inputDate();
     if (date == null) return;
 
     Period period = selectPeriod();
     if (period == null) return;
 
-    // 교시 선택 직후 즉시 유효성 체크
+    // 날짜/교시 유효성 체크
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
       return;
     }
 
-    Facility facility = selectFacility();
-    if (facility == null) return;
-
     // 제한 기간 체크
-    String blockError = reservationService.validateBlockPeriod(date, facility.getFacilityId(), null);
+    String blockError = reservationService.validateBlockPeriod(date, period, facility.getFacilityId(), null);
     if (blockError != null) {
       System.out.println(">> " + blockError);
       return;
@@ -227,24 +243,24 @@ public class ReservationView {
   private void equipmentReservationFlow() {
     System.out.println("\n[비품 예약 신청]");
 
+    Equipment equipment = selectEquipment();
+    if (equipment == null) return;
+
     LocalDate date = inputDate();
     if (date == null) return;
 
     Period period = selectPeriod();
     if (period == null) return;
 
-    // 교시 선택 직후 즉시 유효성 체크
+    // 날짜/교시 유효성 체크
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
       return;
     }
 
-    Equipment equipment = selectEquipment();
-    if (equipment == null) return;
-
     // 제한 기간 체크
-    String blockError = reservationService.validateBlockPeriod(date, null, equipment.getEquipmentId());
+    String blockError = reservationService.validateBlockPeriod(date, period, null, equipment.getEquipmentId());
     if (blockError != null) {
       System.out.println(">> " + blockError);
       return;

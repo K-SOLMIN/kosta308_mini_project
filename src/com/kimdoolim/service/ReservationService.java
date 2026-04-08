@@ -98,10 +98,12 @@ public class ReservationService {
   }
 
   // 제한 기간 체크 (시설 또는 비품 id 중 하나만 전달)
-  public String validateBlockPeriod(LocalDate reservationDate, Long facilityId, Long equipmentId) {
-    String reason = reservationDAO.findBlockedReason(reservationDate, facilityId, equipmentId);
+  public String validateBlockPeriod(LocalDate reservationDate, Period period,
+                                    Long facilityId, Long equipmentId) {
+    String reason = reservationDAO.findBlockedReason(
+        reservationDate, period.getPeriodId(), facilityId, equipmentId);
     if (reason != null) {
-      return "해당 날짜는 예약이 제한된 기간입니다. (사유: " + reason + ")";
+      return "해당 날짜/교시는 예약이 제한된 기간입니다. (사유: " + reason + ")";
     }
     return null;
   }
