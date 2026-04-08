@@ -6,16 +6,15 @@ import com.kimdoolim.dto.User;
 import com.kimdoolim.main.view.LoginView;
 import com.kimdoolim.main.view.MainView;
 
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import static java.lang.System.out;
-
 public class ClientMain {
+    public static PrintWriter out = null;
+    public static Socket socket = null;
 
     public static void main(String[] args) {
         new LoginView().loginView();
@@ -23,7 +22,7 @@ public class ClientMain {
 
         try {
             Socket socket = new Socket("localhost", 9999);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            out = new PrintWriter(socket.getOutputStream(), true);
 
             System.out.println("서버로 보낼 userId : " + loginUser.getUserId());
             out.println(loginUser.getUserId());
