@@ -13,8 +13,7 @@ public class User {
     private int gradeNo;
     private int classNo;
     private boolean isActive;
-
-    private User() { }
+    private String userStatus; // ACTIVE / 휴직 / 전근
 
     public static Builder builder() {
         return new Builder();
@@ -31,6 +30,7 @@ public class User {
         private int gradeNo;
         private int classNo;
         private boolean isActive;
+        private String userStatus;
 
         public Builder userId(int userId) {
             this.userId = userId;
@@ -72,6 +72,10 @@ public class User {
             this.isActive = isActive;
             return this;
         }
+        public Builder userStatus(String userStatus) {
+            this.userStatus = userStatus;
+            return this;
+        }
 
         public User build() {
             User user = new User();
@@ -85,6 +89,7 @@ public class User {
             user.gradeNo    = this.gradeNo;
             user.classNo    = this.classNo;
             user.isActive   = this.isActive;
+            user.userStatus = this.userStatus;
             return user;
         }
     }
@@ -100,6 +105,7 @@ public class User {
     public int getGradeNo()            { return gradeNo; }
     public int getClassNo()            { return classNo; }
     public boolean isActive()          { return isActive; }
+    public String getUserStatus()      { return userStatus; }
 
     @Override
     public boolean equals(Object o) {
@@ -116,16 +122,16 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "userId=" + userId +
-                ", schoolId=" + schoolId +
-                ", id='" + id + '\'' +
-                ", password='" + password + '\'' +
-                ", permission=" + permission +
-                ", name='" + name + '\'' +
-                ", phone='" + phone + '\'' +
-                ", gradeNo=" + gradeNo +
-                ", classNo=" + classNo +
-                ", isActive=" + isActive +
-                '}';
+            "userId=" + userId +
+            ", schoolId=" + schoolId +
+            ", id='" + id + '\'' +
+            ", password='" + password + '\'' +
+            ", permission=" + permission +
+            ", name='" + name + '\'' +
+            ", phone='" + phone + '\'' +
+            ", gradeNo=" + gradeNo +
+            ", classNo=" + classNo +
+            ", isActive=" + isActive +
+            '}';
     }
 }

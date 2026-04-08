@@ -89,10 +89,18 @@ public class ReservationView {
     // start_time 기준 오름차순 정렬
     allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
 
-    System.out.println("────────────────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-18s %-12s %-8s %-6s %-15s %-14s%n",
-        "번호", "예약신청일시", "예약날짜", "교시", "구분", "시설/비품명", "상태");
-    System.out.println("────────────────────────────────────────────────────────────────────────");
+    String div = "─".repeat(74);
+    System.out.println(div);
+    System.out.println(
+        pad("번호", 4) + "  " +
+            pad("예약신청일시", 16) + "  " +
+            pad("예약날짜", 12) + "  " +
+            pad("교시", 10) + "  " +
+            pad("구분", 6) + "  " +
+            pad("시설/비품명", 14) + "  " +
+            "상태"
+    );
+    System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -131,17 +139,17 @@ public class ReservationView {
         statusDisplay = r.getStatus();
       }
 
-      System.out.printf("%-4d %-18s %-12s %-8s %-6s %-15s %-14s%n",
-          i + 1,
-          r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")),
-          r.getReservationDate().toString(),
-          r.getPeriod().getPeriodName(),
-          r.getTargetType().equals("FACILITY") ? "시설" : "비품",
-          targetName,
-          statusDisplay
+      System.out.println(
+          pad(String.valueOf(i + 1), 4) + "  " +
+              pad(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 16) + "  " +
+              pad(r.getReservationDate().toString(), 12) + "  " +
+              pad(r.getPeriod().getPeriodName(), 10) + "  " +
+              pad(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 6) + "  " +
+              pad(targetName, 14) + "  " +
+              statusDisplay
       );
     }
-    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.println("─".repeat(74));
   }
 
   // ─────────────────────────────────────────────────────
@@ -445,5 +453,25 @@ public class ReservationView {
     } catch (NumberFormatException e) {
       return -1;
     }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 한글 포함 문자열 패딩 헬퍼
+  // 한글/CJK는 2칸, 나머지는 1칸으로 계산해서 width에 맞춰 공백 추가
+  // ─────────────────────────────────────────────────────
+  private int displayWidth(String s) {
+    int width = 0;
+    for (char c : s.toCharArray()) {
+      width += (c >= '\uAC00' && c <= '\uD7A3') || (c >= '\u3000' && c <= '\u9FFF') ? 2 : 1;
+    }
+    return width;
+  }
+
+  private String pad(String s, int width) {
+    int diff = width - displayWidth(s);
+    if (diff <= 0) return s;
+    StringBuilder sb = new StringBuilder(s);
+    for (int i = 0; i < diff; i++) sb.append(' ');
+    return sb.toString();
   }
 }
