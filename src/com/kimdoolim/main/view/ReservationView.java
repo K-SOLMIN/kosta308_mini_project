@@ -191,6 +191,13 @@ public class ReservationView {
     Facility facility = selectFacility();
     if (facility == null) return;
 
+    // 제한 기간 체크
+    String blockError = reservationService.validateBlockPeriod(date, facility.getFacilityId(), null);
+    if (blockError != null) {
+      System.out.println(">> " + blockError);
+      return;
+    }
+
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();
 
@@ -235,6 +242,13 @@ public class ReservationView {
 
     Equipment equipment = selectEquipment();
     if (equipment == null) return;
+
+    // 제한 기간 체크
+    String blockError = reservationService.validateBlockPeriod(date, null, equipment.getEquipmentId());
+    if (blockError != null) {
+      System.out.println(">> " + blockError);
+      return;
+    }
 
     System.out.print("사용 목적을 입력하세요: ");
     String purpose = scanner.nextLine();

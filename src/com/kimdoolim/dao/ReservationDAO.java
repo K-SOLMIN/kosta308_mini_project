@@ -471,6 +471,45 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
+  // 17. 제한 기간 체크
+  //     예약 날짜가 block_period 안에 있고,
+  //     해당 시설 or 비품이 block_period_detail에 등록돼 있으면
+  //     제한 사유(description)를 반환, 없으면 null 반환
+  // ─────────────────────────────────────────────────────
+  public String findBlockedReason(LocalDate reservationDate, Long facilityId, Long equipmentId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+    String reason = null;
+
+    String sql = "SELECT bp.block_period_description " +
+        "FROM block_period bp " +
+        "JOIN block_period_detail bpd ON bp.block_period_id = bpd.block_period_id " +
+        "WHERE ? BETWEEN bp.block_period_startdate AND bp.block_period_enddate " +
+        "AND (bpd.facility_id = ? OR bpd.equipment_id = ?) " +
+        "LIMIT 1";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      pstmt.setDate(1, Date.valueOf(reservationDate));
+      if (facilityId != null) pstmt.setLong(2, facilityId);
+      else pstmt.setNull(2, Types.BIGINT);
+      if (equipmentId != null) pstmt.setLong(3, equipmentId);
+      else pstmt.setNull(3, Types.BIGINT);
+
+      rs = pstmt.executeQuery();
+      if (rs.next()) {
+        reason = rs.getString("block_period_description");
+      }
+    } catch (SQLException e) {
+      System.out.println("제한 기간 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return reason;
+  }
+
+  // ─────────────────────────────────────────────────────
   // ResultSet → Reservation 객체 변환 공통 메서드
   // ─────────────────────────────────────────────────────
   private List<Reservation> parseReservationResultSet(ResultSet rs, Integer userId) throws SQLException {

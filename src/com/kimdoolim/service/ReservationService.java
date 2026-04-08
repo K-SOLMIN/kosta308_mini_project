@@ -97,6 +97,15 @@ public class ReservationService {
     return result > 0 ? "예약이 신청되었습니다! (승인 대기 중)" : "예약 신청 중 오류가 발생했습니다.";
   }
 
+  // 제한 기간 체크 (시설 또는 비품 id 중 하나만 전달)
+  public String validateBlockPeriod(LocalDate reservationDate, Long facilityId, Long equipmentId) {
+    String reason = reservationDAO.findBlockedReason(reservationDate, facilityId, equipmentId);
+    if (reason != null) {
+      return "해당 날짜는 예약이 제한된 기간입니다. (사유: " + reason + ")";
+    }
+    return null;
+  }
+
   public List<Reservation> getMyReservations() {
     return reservationDAO.findReservationsByUserId(Auth.getUserInfo().getUserId());
   }
@@ -167,6 +176,4 @@ public class ReservationService {
     int result = reservationDAO.forcecancelReservation(reservationId, reason);
     return result > 0 ? "예약이 강제 취소되었습니다." : "강제 취소 처리 중 오류가 발생했습니다.";
   }
-
-
 }
