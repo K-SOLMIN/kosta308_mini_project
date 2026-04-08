@@ -89,10 +89,10 @@ public class ReservationView {
     // start_time 기준 오름차순 정렬
     allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
 
-    System.out.println("──────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-12s %-8s %-6s %-15s %-14s%n",
-        "번호", "예약날짜", "교시", "구분", "시설/비품명", "상태");
-    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.println("────────────────────────────────────────────────────────────────────────");
+    System.out.printf("%-4s %-18s %-12s %-8s %-6s %-15s %-14s%n",
+        "번호", "예약신청일시", "예약날짜", "교시", "구분", "시설/비품명", "상태");
+    System.out.println("────────────────────────────────────────────────────────────────────────");
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -131,8 +131,9 @@ public class ReservationView {
         statusDisplay = r.getStatus();
       }
 
-      System.out.printf("%-4d %-12s %-8s %-6s %-15s %-10s%n",
+      System.out.printf("%-4d %-18s %-12s %-8s %-6s %-15s %-14s%n",
           i + 1,
+          r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")),
           r.getReservationDate().toString(),
           r.getPeriod().getPeriodName(),
           r.getTargetType().equals("FACILITY") ? "시설" : "비품",
