@@ -5,11 +5,14 @@ import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
 import com.kimdoolim.main.view.LoginView;
 import com.kimdoolim.main.view.MainView;
+
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ClientMain {
 
     public static Socket socket;
+    public static PrintWriter out;
 
     public static void main(String[] args) {
         new LoginView().loginView();
