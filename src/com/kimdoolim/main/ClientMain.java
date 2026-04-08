@@ -1,11 +1,13 @@
 package com.kimdoolim.main;
 
+import com.kimdoolim.alarm.AlarmReceiveThread;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
 import com.kimdoolim.main.view.LoginView;
 import com.kimdoolim.main.view.MainView;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -17,6 +19,15 @@ public class ClientMain {
     public static void main(String[] args) {
         new LoginView().loginView();
         User loginUser = Auth.getUserInfo();
+
+        try {
+            socket = new Socket("localhost", 9999);
+            out = new PrintWriter(socket.getOutputStream(), true);
+
+            new Thread(new AlarmReceiveThread()).start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
 //        if (loginUser == null) {
 //            System.out.println("로그인에 실패했습니다.");
