@@ -25,4 +25,5 @@ public class Reservation {
     private String realUse;
     private LocalDateTime approvedAt;
     private String targetType;
+    private LocalDateTime returnedAt;   // 실제 반납 시각 (return_request.created_at)
 }

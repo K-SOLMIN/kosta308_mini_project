@@ -196,12 +196,14 @@ public class ReservationDAO {
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
         "       f.name AS facility_name, " +
-        "       e.name AS equipment_name " +
+        "       e.name AS equipment_name, " +
+        "       rr.created_at AS returned_at " +
         "FROM reservation r " +
         "JOIN period p ON r.period_id = p.period_id " +
         "JOIN user u ON r.user_id = u.user_id " +
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        "LEFT JOIN return_request rr ON r.reservation_id = rr.reservation_id " +
         "WHERE r.user_id = ? " +
         "ORDER BY r.reservation_date DESC, r.created_at DESC";
 
@@ -553,6 +555,8 @@ public class ReservationDAO {
           .facility(facility)
           .equipment(equipment)
           .user(user)
+          .returnedAt(rs.getTimestamp("returned_at") != null
+              ? rs.getTimestamp("returned_at").toLocalDateTime() : null)
           .build());
     }
     return list;

@@ -5,6 +5,7 @@ import com.kimdoolim.dto.*;
 import com.kimdoolim.service.ReservationService;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -83,8 +84,13 @@ public class ReservationView {
       return;
     }
 
+    // 교시 전체 목록 (다음 교시 시작 시간 계산용)
+    List<Period> allPeriods = reservationService.getAvailablePeriods();
+    // start_time 기준 오름차순 정렬
+    allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
+
     System.out.println("──────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-12s %-8s %-6s %-15s %-10s%n",
+    System.out.printf("%-4s %-12s %-8s %-6s %-15s %-14s%n",
         "번호", "예약날짜", "교시", "구분", "시설/비품명", "상태");
     System.out.println("──────────────────────────────────────────────────────────");
 
@@ -96,9 +102,10 @@ public class ReservationView {
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
       // 상태 표시 변환
-      // 대기    → 승인 대기중
-      // 승인    → 오늘 날짜이고 교시 시간대 안이면 '사용중', 아니면 '승인'
-      // 나머지  → DB 값 그대로
+      // 대기     → 승인 대기중
+      // 승인     → 오늘 날짜이고 교시 시간대 안이면 '사용중', 아니면 '승인'
+      // 반납완료 → 다음 교시 시작 전까지 반납 안 했으면 '반납완료(반납지연)'
+      // 나머지   → DB 값 그대로
       String statusDisplay;
       if (r.getStatus().equals("대기")) {
         statusDisplay = "승인 대기중";
@@ -109,6 +116,17 @@ public class ReservationView {
         boolean isDuringTime = !now.isBefore(r.getPeriod().getStartTime())
             && !now.isAfter(r.getPeriod().getEndTime());
         statusDisplay = (isToday && isDuringTime) ? "사용중" : "승인";
+      } else if (r.getStatus().equals("반납완료") && r.getReturnedAt() != null) {
+        // 현재 교시 종료 시간 이후 첫 번째 교시 시작 시간 = 반납 마감
+        LocalTime currentEnd = r.getPeriod().getEndTime();
+        LocalTime deadlineTime = allPeriods.stream()
+            .map(Period::getStartTime)
+            .filter(t -> t.isAfter(currentEnd))
+            .findFirst()
+            .orElse(currentEnd); // 마지막 교시면 종료 시간 기준
+        LocalDateTime deadline = r.getReservationDate().atTime(deadlineTime);
+        statusDisplay = r.getReturnedAt().isAfter(deadline)
+            ? "반납완료(반납지연)" : "반납완료";
       } else {
         statusDisplay = r.getStatus();
       }
