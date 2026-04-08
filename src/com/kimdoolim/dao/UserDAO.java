@@ -23,7 +23,7 @@ public class UserDAO {
     ResultSet rs = null;
 
     String sql = "SELECT user_id, school_id, id, permission, name, phone, " +
-        "grade_no, class_no, is_active " +
+        "grade_no, class_no, is_active, user_status " +
         "FROM user WHERE permission != 'ADMIN' " +
         "ORDER BY permission, name";
 
@@ -41,6 +41,7 @@ public class UserDAO {
             .gradeNo(rs.getInt("grade_no"))
             .classNo(rs.getInt("class_no"))
             .isActive(Boolean.parseBoolean(rs.getString("is_active")))
+            .userStatus(rs.getString("user_status"))
             .build());
       }
     } catch (SQLException e) {
@@ -84,47 +85,54 @@ public class UserDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 3. 사용자 비활성화 (휴직/전근)
+  // 3. 휴직 처리 (is_active=false, user_status='휴직')
   // ─────────────────────────────────────────────────────
-  public int deactivateUser(int userId) {
-    Connection conn = db.getConnection();
-    PreparedStatement pstmt = null;
-    int result = 0;
-
-    String sql = "UPDATE user SET is_active = 'false' WHERE user_id = ?";
-
-    try {
-      pstmt = conn.prepareStatement(sql);
-      pstmt.setInt(1, userId);
-      result = pstmt.executeUpdate();
-      db.commit(conn);
-    } catch (SQLException e) {
-      db.rollback(conn);
-      System.out.println("사용자 비활성화 실패: " + e.getMessage());
-    } finally {
-      db.close(pstmt); db.close(conn);
-    }
-    return result;
+  public int setLeaveOfAbsence(int userId) {
+    return updateUserStatus(userId, false, "휴직");
   }
 
   // ─────────────────────────────────────────────────────
-  // 4. 사용자 활성화 (복직)
+  // 4. 전근 처리 (is_active=false, user_status='전근')
   // ─────────────────────────────────────────────────────
-  public int activateUser(int userId) {
+  public int setTransfer(int userId) {
+    return updateUserStatus(userId, false, "전근");
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 5. 복직 처리 (is_active=true, user_status='ACTIVE')
+  //    휴직자만 복직 가능 (전근은 새 관리자가 승인해야 함)
+  // ─────────────────────────────────────────────────────
+  public int restoreFromLeave(int userId) {
+    return updateUserStatus(userId, true, "ACTIVE");
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 6. 전근 승인 (새 학교 관리자가 승인 → 활성화)
+  // ─────────────────────────────────────────────────────
+  public int approveTransfer(int userId) {
+    return updateUserStatus(userId, true, "ACTIVE");
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 공통 상태 업데이트
+  // ─────────────────────────────────────────────────────
+  private int updateUserStatus(int userId, boolean isActive, String userStatus) {
     Connection conn = db.getConnection();
     PreparedStatement pstmt = null;
     int result = 0;
 
-    String sql = "UPDATE user SET is_active = 'true' WHERE user_id = ?";
+    String sql = "UPDATE user SET is_active = ?, user_status = ? WHERE user_id = ?";
 
     try {
       pstmt = conn.prepareStatement(sql);
-      pstmt.setInt(1, userId);
+      pstmt.setString(1, String.valueOf(isActive));
+      pstmt.setString(2, userStatus);
+      pstmt.setInt(3, userId);
       result = pstmt.executeUpdate();
       db.commit(conn);
     } catch (SQLException e) {
       db.rollback(conn);
-      System.out.println("사용자 활성화 실패: " + e.getMessage());
+      System.out.println("사용자 상태 변경 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
     }

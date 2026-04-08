@@ -5,61 +5,53 @@ import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
 import com.kimdoolim.main.view.LoginView;
 import com.kimdoolim.main.view.MainView;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ClientMain {
-    public static PrintWriter out = null;
-    public static Socket socket = null;
+
+    public static Socket socket;
 
     public static void main(String[] args) {
         new LoginView().loginView();
         User loginUser = Auth.getUserInfo();
 
-        try {
-            Socket socket = new Socket("localhost", 9999);
-            out = new PrintWriter(socket.getOutputStream(), true);
+        if (loginUser == null) {
+            System.out.println("로그인에 실패했습니다.");
+            return;
+        }
 
-            System.out.println("서버로 보낼 userId : " + loginUser.getUserId());
-            out.println(loginUser.getUserId());
-
-            new Thread(() -> {
-                System.out.println("알람받을 thread생성");
-                try {
-                    BufferedReader msgReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    String alarmMsg = "";
-
-                    while((alarmMsg = msgReader.readLine()) != null) {
-                        System.out.println(alarmMsg);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                System.out.println("알림받는 thread 소멸");
-            }).start();
-        } catch(IOException e) {
-            e.printStackTrace();
-            out.println("서버소켓에 접속 실패;;");
+        // 비활성 계정 차단 (Auth.login에서 이미 막히지만 이중 체크)
+        if (!loginUser.isActive()) {
+            String status = loginUser.getUserStatus();
+            if ("전근".equals(status)) {
+                System.out.println("전근 처리된 계정입니다. 새 학교 관리자에게 승인을 요청해주세요.");
+            } else {
+                System.out.println("비활성화된 계정입니다. (" + status + ") 관리자에게 문의해주세요.");
+            }
+            return;
         }
 
         MainView mainView = new MainView();
 
+        // 비활성 계정 → 권한 관계없이 제한 메뉴
+        if (!loginUser.isActive()) {
+            String status = loginUser.getUserStatus();
+            if ("전근".equals(status)) {
+                System.out.println("※ 전근 처리된 계정입니다. 새 학교 관리자 승인 전까지 조회만 가능합니다.");
+            } else {
+                System.out.println("※ 휴직 중인 계정입니다. 예약 내역 조회와 마이페이지만 이용 가능합니다.");
+            }
+            mainView.restrictedUserView();
+            return;
+        }
+
         Permission permission = loginUser.getPermission();
 
         if (permission == Permission.USER) {
-            // 일반 사용자 메뉴
             mainView.userMainView();
-
         } else if (permission == Permission.MIDDLEADMIN) {
-            // 중간 관리자 메뉴
             mainView.middleAdminMainView();
-
         } else if (permission == Permission.ADMIN) {
-            // 상위 관리자 메뉴
             mainView.adminMainView();
         }
     }

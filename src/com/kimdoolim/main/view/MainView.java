@@ -13,6 +13,39 @@ public class MainView {
     private final Scanner scanner = AppScanner.getScanner();
 
     // ─────────────────────────────────────────────────────
+    // 비활성 사용자 메뉴 (휴직/전근)
+    // 예약 내역 조회 + 마이페이지만 허용
+    // ─────────────────────────────────────────────────────
+    public void restrictedUserView() {
+        while (true) {
+            System.out.println("=================================================================");
+            System.out.println("                     제한된 메뉴 (비활성 계정)                     ");
+            System.out.println("=================================================================");
+            System.out.println("  1. 예약 내역 확인 || 2. 마이페이지 || 0. 종료 ");
+            System.out.println("=================================================================");
+            System.out.print("메뉴 선택 : ");
+
+            int choice = readInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.println(">> [예약 내역 확인]으로 이동합니다.");
+                    new ReservationView().reservationHistoryMenu();
+                    break;
+                case 2:
+                    System.out.println(">> [마이페이지]로 이동합니다.");
+                    new MyPageView().myPageMenu();
+                    break;
+                case 0:
+                    System.out.println("[프로그램을 종료합니다.]");
+                    return;
+                default:
+                    System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
     // 일반 사용자 메뉴
     // ─────────────────────────────────────────────────────
     public void userMainView() {

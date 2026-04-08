@@ -30,17 +30,37 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 3. 상태 변경 (활성/비활성 토글)
+  // 3. 휴직 처리 (관리자가 직접 관리)
   // ─────────────────────────────────────────────────────
-  public String toggleUserActive(int userId, boolean currentIsActive) {
-    int result;
-    if (currentIsActive) {
-      result = userDAO.deactivateUser(userId);
-      return result > 0 ? "비활성화 처리되었습니다. (휴직/전근)" : "처리 중 오류가 발생했습니다.";
-    } else {
-      result = userDAO.activateUser(userId);
-      return result > 0 ? "활성화 처리되었습니다. (복직)" : "처리 중 오류가 발생했습니다.";
-    }
+  public String setLeaveOfAbsence(int userId) {
+    int result = userDAO.setLeaveOfAbsence(userId);
+    return result > 0 ? "휴직 처리되었습니다." : "처리 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 4. 복직 처리 (휴직 → 활성)
+  // ─────────────────────────────────────────────────────
+  public String restoreFromLeave(int userId) {
+    int result = userDAO.restoreFromLeave(userId);
+    return result > 0 ? "복직 처리되었습니다." : "처리 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 5. 전근 처리 (비활성화 → 새 학교 관리자 승인 필요)
+  // ─────────────────────────────────────────────────────
+  public String setTransfer(int userId) {
+    int result = userDAO.setTransfer(userId);
+    return result > 0 ? "전근 처리되었습니다. 해당 사용자는 새 학교 관리자 승인 후 사용 가능합니다."
+        : "처리 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 6. 전근 승인 (새 학교 관리자가 승인)
+  // ─────────────────────────────────────────────────────
+  public String approveTransfer(int userId) {
+    int result = userDAO.approveTransfer(userId);
+    return result > 0 ? "전근 승인이 완료되었습니다. 사용자가 시스템을 사용할 수 있습니다."
+        : "처리 중 오류가 발생했습니다.";
   }
 
   // ─────────────────────────────────────────────────────
