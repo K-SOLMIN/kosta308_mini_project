@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class AlarmReceiveThread extends Thread{
+
     @Override
     public void run() {
+
         System.out.println("알람받을 thread생성");
+
         try {
             BufferedReader msgReader = new BufferedReader(new InputStreamReader(ClientMain.socket.getInputStream()));
             String alarmMsg = "";
