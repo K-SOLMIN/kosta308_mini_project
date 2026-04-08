@@ -455,7 +455,8 @@ public class ReservationDAO {
 
     String sql = "UPDATE reservation SET status = '취소' " +
         "WHERE reservation_id = ? AND user_id = ? " +
-        "AND status IN ('대기', '승인')";
+        "AND status IN ('대기', '승인') " +
+        "AND CONCAT(reservation_date, ' ', (SELECT start_time FROM period WHERE period_id = reservation.period_id)) >= NOW()";
 
     try {
       pstmt = conn.prepareStatement(sql);

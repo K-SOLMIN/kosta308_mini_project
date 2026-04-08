@@ -37,7 +37,6 @@ public class ClientMain {
             } else {
                 System.out.println("비활성화된 계정입니다. (" + status + ") 관리자에게 문의해주세요.");
             }
-            return;
         }
 
         MainView mainView = new MainView();
