@@ -25,4 +25,7 @@ public class AlarmReceiveThread extends Thread{
         }
         System.out.println("알림받는 thread 소멸");
     }
+
+    //즉시사용테스트
+
 }

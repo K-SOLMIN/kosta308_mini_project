@@ -1,5 +1,7 @@
-package com.kimdoolim.alarm;
+package com.kimdoolim.socket;
 
+import com.kimdoolim.alarm.AlarmScheduler;
+import com.kimdoolim.alarm.AlarmService;
 import com.kimdoolim.dto.Reservation;
 
 import java.io.BufferedReader;

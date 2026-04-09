@@ -1,7 +1,7 @@
 package com.kimdoolim.main;
 
 import com.kimdoolim.alarm.AlarmScheduler;
-import com.kimdoolim.alarm.SocketSession;
+import com.kimdoolim.socket.SocketSession;
 
 import java.io.IOException;
 import java.net.ServerSocket;

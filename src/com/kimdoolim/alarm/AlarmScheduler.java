@@ -100,10 +100,11 @@ public class AlarmScheduler {
         if (res == null) return;
 
         // 2. 종료 시간 + 10분 계산
-        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).plusMinutes(10);
+        //테스트로 endTime + 1분뒤에 보내는중
+        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).plusMinutes(1);
         long delay = Duration.between(LocalDateTime.now(), overdueCheckTime).getSeconds();
 
-        if (delay < 0) delay = 3; // 이미 지난 경우 즉시(3초 뒤) 체크
+        if (delay < 0) delay = 3; // 이미 지난 경우 즉시(3초 뒤) 체크(테스트용)
 
         // 3. 스케줄 등록
         scheduler.schedule(() -> {
