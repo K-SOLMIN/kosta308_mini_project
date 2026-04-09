@@ -38,7 +38,7 @@ public class ClientManager extends Thread{
             // receiverId : 알림내용 을 :로 구분해서 map.get(receiverId)로 PrintWriter가져와서 해당유저에게 알림전달
             String line;
             while ((line = in.readLine()) != null) {
-                if (line.startsWith("SCHEDULE:")) {
+                if (line.startsWith("APPROVED_RESERVATION:")) {
                     // 스케줄 등록 요청
                     addApprovedSchedule(line);
                 } else if (line.contains(":")) {

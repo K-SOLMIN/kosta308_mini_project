@@ -61,8 +61,8 @@ public class AlarmScheduler {
 
         List<ScheduledFuture<?>> futures = new ArrayList<>();
         System.out.println("🆕 [실시간 등록] 당일 예약 감지: ID " + reservation.getReservationId());
-        futures.add(scheduleTask(reservation, "사용안내", reservation.getPeriod().getStartTime()));
-        futures.add(scheduleTask(reservation, "반납안내", reservation.getPeriod().getEndTime()));
+        futures.add(scheduleTask(reservation, "START_RESERVATION", reservation.getPeriod().getStartTime()));
+        futures.add(scheduleTask(reservation, "END_RESERVATION", reservation.getPeriod().getEndTime()));
 
         // 예약 ID로 task 저장
         scheduledTasks.put(reservation.getReservationId(), futures);
@@ -109,7 +109,7 @@ public class AlarmScheduler {
                     ? reservation.getFacility().getName()
                     : reservation.getEquipment().getName();
 
-            String message = (type.equals("START"))
+            String message = (type.equals("START_RESERVATION"))
                     ? String.format("🔔 [사용 안내] '%s' 사용 10분 전입니다.", resourceName)
                     : String.format("🔔 [반납 안내] '%s' 반납 10분 전입니다.", resourceName);
 
