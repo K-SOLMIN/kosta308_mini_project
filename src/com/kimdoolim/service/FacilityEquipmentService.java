@@ -3,6 +3,7 @@ package com.kimdoolim.service;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dao.FacilityEquipmentDAO;
 import com.kimdoolim.dto.Equipment;
+import com.kimdoolim.dto.EquipmentDetail;
 import com.kimdoolim.dto.Facility;
 import com.kimdoolim.dto.User;
 
@@ -53,13 +54,25 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 6. 비품 등록
+  // 6. 비품 등록 (단건 - 기존 호환용)
   //    → 담당자는 현재 로그인한 관리자로 자동 설정
   // ─────────────────────────────────────────────────────
   public String registerEquipment(Equipment equipment) {
     User loginUser = Auth.getUserInfo();
     int result = facilityEquipmentDAO.saveEquipment(equipment, loginUser.getUserId());
     return result > 0 ? "비품이 등록되었습니다!" : "비품 등록 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 6-1. 비품(세트) + 낱개 등록
+  //      details 목록: 시리얼번호 + 낱개별 상태를 담은 EquipmentDetail 리스트
+  // ─────────────────────────────────────────────────────
+  public String registerEquipmentWithDetails(Equipment equipment, List<EquipmentDetail> details) {
+    User loginUser = Auth.getUserInfo();
+    int result = facilityEquipmentDAO.saveEquipmentWithDetails(equipment, loginUser.getUserId(), details);
+    return result > 0
+        ? "비품이 등록되었습니다! (총 " + details.size() + "개)"
+        : "비품 등록 중 오류가 발생했습니다.";
   }
 
   // ─────────────────────────────────────────────────────

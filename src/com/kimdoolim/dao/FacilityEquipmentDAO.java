@@ -3,6 +3,7 @@ package com.kimdoolim.dao;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.Equipment;
+import com.kimdoolim.dto.EquipmentDetail;
 import com.kimdoolim.dto.Facility;
 import com.kimdoolim.dto.User;
 
@@ -73,7 +74,9 @@ public class FacilityEquipmentDAO {
     ResultSet rs = null;
 
     String sql = "SELECT e.equipment_id, e.manager_id, e.name, e.location, e.serial_no, " +
-        "       e.status, u.name AS manager_name " +
+        "       e.status, u.name AS manager_name, " +
+        "       (SELECT COUNT(*) FROM equipmentdetail ed " +
+        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count " +
         "FROM equipment e " +
         "LEFT JOIN user u ON e.manager_id = u.user_id " +
         "WHERE e.check_delete = 'false' " +
@@ -98,6 +101,7 @@ public class FacilityEquipmentDAO {
             .serialNo(rs.getString("serial_no"))
             .status(rs.getString("status"))
             .user(manager)
+            .quantity(rs.getInt("item_count"))
             .build());
       }
     } catch (SQLException e) {
@@ -167,6 +171,58 @@ public class FacilityEquipmentDAO {
       System.out.println("비품 등록 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 4-1. 비품(세트) + 낱개 상세 동시 등록
+  //      equipment 테이블에 세트 정보를 INSERT한 뒤
+  //      equipmentdetail 에 낱개 목록(시리얼+상태)을 일괄 INSERT
+  // ─────────────────────────────────────────────────────
+  public int saveEquipmentWithDetails(Equipment equipment, int managerId, List<EquipmentDetail> details) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+    int result = 0;
+
+    String equipSql = "INSERT INTO equipment " +
+        "(manager_id, name, location, check_delete, serial_no, status) " +
+        "VALUES (?, ?, ?, 'false', ?, ?)";
+    String detailSql = "INSERT INTO equipmentdetail " +
+        "(equipment_id, check_delete, serial_no, status) " +
+        "VALUES (?, 'false', ?, ?)";
+
+    try {
+      pstmt = conn.prepareStatement(equipSql, Statement.RETURN_GENERATED_KEYS);
+      pstmt.setInt(1, managerId);
+      pstmt.setString(2, equipment.getName());
+      pstmt.setString(3, equipment.getLocation());
+      pstmt.setString(4, equipment.getSerialNo());
+      pstmt.setString(5, equipment.getStatus());
+      result = pstmt.executeUpdate();
+
+      rs = pstmt.getGeneratedKeys();
+      if (!rs.next()) throw new SQLException("비품 ID 생성 실패");
+      long newEquipmentId = rs.getLong(1);
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      pstmt = conn.prepareStatement(detailSql);
+      for (EquipmentDetail detail : details) {
+        pstmt.setLong(1, newEquipmentId);
+        pstmt.setString(2, detail.getSerialNo());
+        pstmt.setString(3, detail.getStatus());
+        pstmt.addBatch();
+      }
+      pstmt.executeBatch();
+      db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("비품 등록 실패: " + e.getMessage());
+      result = 0;
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
     }
     return result;
   }
@@ -386,7 +442,9 @@ public class FacilityEquipmentDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT e.equipment_id, e.name, e.location, e.serial_no, e.status " +
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.serial_no, e.status, " +
+        "       (SELECT COUNT(*) FROM equipmentdetail ed " +
+        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count " +
         "FROM equipment e " +
         "WHERE e.check_delete = 'false' AND e.manager_id = ? " +
         "ORDER BY e.equipment_id";
@@ -402,6 +460,7 @@ public class FacilityEquipmentDAO {
             .location(rs.getString("location"))
             .serialNo(rs.getString("serial_no"))
             .status(rs.getString("status"))
+            .quantity(rs.getInt("item_count"))
             .build());
       }
     } catch (SQLException e) {

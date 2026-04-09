@@ -3,12 +3,14 @@ package com.kimdoolim.manager;
 import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Equipment;
+import com.kimdoolim.dto.EquipmentDetail;
 import com.kimdoolim.dto.Facility;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
 import com.kimdoolim.service.FacilityEquipmentService;
 import com.kimdoolim.service.UserService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -183,26 +185,27 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(78) : "─".repeat(62);
+    String div = isAdmin ? "─".repeat(90) : "─".repeat(74);
     System.out.println(div);
     if (isAdmin) {
-      System.out.printf("%-4s %-15s %-10s %-15s %-8s %-10s%n",
-          "번호", "비품명", "위치", "시리얼번호", "상태", "담당자");
+      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-10s%n",
+          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "담당자");
     } else {
-      System.out.printf("%-4s %-15s %-10s %-15s %-8s%n",
-          "번호", "비품명", "위치", "시리얼번호", "상태");
+      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s%n",
+          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태");
     }
     System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Equipment e = list.get(i);
+      String qtyStr = e.getQuantity() > 0 ? e.getQuantity() + "개" : "-";
       if (isAdmin) {
         String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
-        System.out.printf("%-4d %-15s %-10s %-15s %-8s %-10s%n",
-            i + 1, e.getName(), e.getLocation(), e.getSerialNo(), e.getStatus(), managerName);
+        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-10s%n",
+            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(), e.getStatus(), managerName);
       } else {
-        System.out.printf("%-4d %-15s %-10s %-15s %-8s%n",
-            i + 1, e.getName(), e.getLocation(), e.getSerialNo(), e.getStatus());
+        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s%n",
+            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(), e.getStatus());
       }
     }
     System.out.println(div);
@@ -256,6 +259,9 @@ public class FacilityEquipmentView {
 
   // ─────────────────────────────────────────────────────
   // 비품 등록 흐름
+  //  - 수량 1개    : 시리얼번호 직접 입력 → 상태 1회 선택
+  //  - 수량 2개 이상 : 접두사 입력 후 자동 시리얼 생성,
+  //                   낱개마다 상태 개별 선택
   // ─────────────────────────────────────────────────────
   private void registerEquipmentFlow() {
     System.out.println("\n[비품 등록]");
@@ -266,25 +272,87 @@ public class FacilityEquipmentView {
     System.out.print("위치: ");
     String location = scanner.nextLine().trim();
 
-    System.out.print("시리얼 번호: ");
-    String serialNo = scanner.nextLine().trim();
+    System.out.print("수량: ");
+    int quantity = readInt();
+    if (quantity < 1) {
+      System.out.println("수량은 1 이상이어야 합니다.");
+      return;
+    }
 
-    System.out.println("상태 선택:");
-    String status = selectStatus();
-    if (status == null) return;
+    List<EquipmentDetail> details = new ArrayList<>();
+    String serialInput;
+
+    if (quantity == 1) {
+      // ── 단일 품목: 시리얼 직접 입력 + 상태 1회 선택 ──
+      System.out.print("시리얼 번호: ");
+      serialInput = scanner.nextLine().trim();
+
+      System.out.println("상태 선택:");
+      String status = selectStatus();
+      if (status == null) return;
+
+      details.add(EquipmentDetail.builder()
+          .serialNo(serialInput)
+          .status(status)
+          .build());
+
+    } else {
+      // ── 복수 품목: 접두사 입력 → 자동 생성 → 낱개별 상태 선택 ──
+      System.out.print("시리얼 번호 접두사 (예: Seoul-Tablet): ");
+      serialInput = scanner.nextLine().trim();
+
+      int digits = Math.max(String.valueOf(quantity).length(), 3);
+      String fmt = "%s-%0" + digits + "d";
+      System.out.println("  자동 생성 예시: "
+          + String.format(fmt, serialInput, 1)
+          + " ~ "
+          + String.format(fmt, serialInput, quantity));
+
+      System.out.println("\n── 낱개별 상태 입력 (" + quantity + "개) ──");
+      for (int i = 1; i <= quantity; i++) {
+        String serial = String.format(fmt, serialInput, i);
+        System.out.println("[" + serial + "] 상태 선택:");
+        String status = selectStatus();
+        if (status == null) {
+          System.out.println("등록이 취소되었습니다.");
+          return;
+        }
+        details.add(EquipmentDetail.builder()
+            .serialNo(serial)
+            .status(status)
+            .build());
+      }
+    }
+
+    // 세트의 대표 상태 = 첫 번째 낱개 상태
+    String representativeStatus = details.get(0).getStatus();
 
     Equipment equipment = Equipment.builder()
         .name(name)
         .location(location)
-        .serialNo(serialNo)
-        .status(status)
+        .serialNo(serialInput)
+        .status(representativeStatus)
         .build();
 
+    // ── 등록 확인 요약 ──
     System.out.println("\n── 비품 정보 확인 ──────────────────");
     System.out.println(" 비품명    : " + name);
     System.out.println(" 위치      : " + location);
-    System.out.println(" 시리얼번호: " + serialNo);
-    System.out.println(" 상태      : " + status);
+    System.out.println(" 수량      : " + quantity + "개");
+    if (quantity == 1) {
+      System.out.println(" 시리얼번호: " + details.get(0).getSerialNo());
+      System.out.println(" 상태      : " + representativeStatus);
+    } else {
+      System.out.println(" 시리얼번호: "
+          + details.get(0).getSerialNo()
+          + " ~ "
+          + details.get(details.size() - 1).getSerialNo());
+      System.out.println("  ┌ 낱개 상태 목록:");
+      for (EquipmentDetail d : details) {
+        System.out.println("  │ " + d.getSerialNo() + "  →  " + d.getStatus());
+      }
+      System.out.println("  └──");
+    }
     System.out.println("────────────────────────────────────");
     System.out.print("등록하시겠습니까? (Y/N): ");
     String confirm = scanner.nextLine().trim().toUpperCase();
@@ -294,7 +362,7 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String msg = service.registerEquipment(equipment);
+    String msg = service.registerEquipmentWithDetails(equipment, details);
     System.out.println(">> " + msg);
   }
 
