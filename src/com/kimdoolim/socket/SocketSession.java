@@ -53,27 +53,36 @@ public class SocketSession extends Thread{
                     facilityEquipmentRequestAlarm(line);
 
                 } else if (line.startsWith("CANCEL:")) {
-                    long resId = Long.parseLong(line.split(":", 2)[1]);
+                    String[] parts = line.split(":");
+                    long resId = Long.parseLong(parts[1]);
+                    String cancelType = parts.length > 2 ? parts[2] : "USER";
+
                     Reservation reservation = alarmService.getReservationById(resId);
 
                     if (reservation != null) {
                         // 사용 + 반납 + 연체 스케줄 전부 취소
                         AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
 
-                        int userId = reservation.getUser().getUserId();
-                        String targetName = (reservation.getFacility() != null)
-                                ? reservation.getFacility().getName()
-                                : reservation.getEquipment().getName();
-                        String targetType = (reservation.getFacility() != null) ? "시설" : "비품";
+                        if ("ADMIN".equals(cancelType)) {
+                            // 관리자 강제취소 - 사용자에게 알림
+                            int userId = reservation.getUser().getUserId();
+                            String targetName = (reservation.getFacility() != null)
+                                    ? reservation.getFacility().getName()
+                                    : reservation.getEquipment().getName();
+                            String targetType = (reservation.getFacility() != null) ? "시설" : "비품";
 
-                        String msg = "\ud83d\udce9 [예약취소] " + targetType + " '" + targetName + "' 예약이 취소되었습니다.";
-                        alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
+                            String msgToUser = "\ud83d\udce9 [예약취소] " + targetType + " '" + targetName + "' 예약이 관리자에 의해 취소되었습니다.";
+                            alarmService.sendAndSaveAlarm(userId, msgToUser, "예약안내");
+                            System.out.println("❌ [관리자 강제취소] 예약 ID: " + resId + " 사용자 " + userId + "에게 알림 완료");
 
-                        System.out.println("❌ [스케줄 전체 취소] 예약 ID: " + resId + " (사용자 " + userId + "에게 알림 완료)");
+                        } else {
+                            // 사용자 본인 취소 - 알림 없음
+                            System.out.println("❌ [사용자 취소] 예약 ID: " + resId + " 스케줄만 취소");
+                        }
+
                     } else {
                         System.out.println("⚠️ [취소 실패] 예약 ID " + resId + " 정보를 찾을 수 없습니다.");
                     }
-
                 } else if (line.contains(":")) {
                     sendingAlarm(line);
 

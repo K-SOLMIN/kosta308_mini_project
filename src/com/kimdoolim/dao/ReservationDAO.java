@@ -448,7 +448,7 @@ public class ReservationDAO {
       db.close(pstmt); db.close(conn);
     }
 
-    sendingManager.sendingTextToSocketServer("취소", reservationId);
+    sendingManager.sendingTextToSocketServer("취소", reservationId, "ADMIN");
 
     return result;
   }
@@ -512,6 +512,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("취소", reservationId, "USER");
+
     return result;
   }
 

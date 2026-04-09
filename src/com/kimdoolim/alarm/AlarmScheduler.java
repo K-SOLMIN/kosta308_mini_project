@@ -91,8 +91,8 @@ public class AlarmScheduler {
                     : reservation.getEquipment().getName();
 
             String message = (type.equals("START"))
-                    ? String.format("🔔 [사용 안내] '%s' 사용 10분 전입니다.", resourceName)
-                    : String.format("🔔 [반납 안내] '%s' 반납 10분 전입니다.", resourceName);
+                    ? String.format("🔔 [사용안내] '%s' 사용 10분 전입니다.", resourceName)
+                    : String.format("🔔 [반납안내] '%s' 반납 10분 전입니다.", resourceName);
 
             alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, type);
             System.out.println("🔔 [" + type + " 발송] " + reservation.getUser().getName() + "님께 전송 완료");
