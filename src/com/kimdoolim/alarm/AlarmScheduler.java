@@ -152,7 +152,7 @@ public class AlarmScheduler {
     private ScheduledFuture<?> scheduleOverdueAlarm(Reservation reservation) {
         // endTime + 10분에 실행
         LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), reservation.getPeriod().getEndTime())
-                .plusMinutes(1);
+                .plusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), endDateTime).getSeconds();
         if (delay < 0) delay = 3;
 

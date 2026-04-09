@@ -283,7 +283,7 @@ public class AlarmService {
 
     public List<Alarm> getMyAlarms(int userId) {
         List<Alarm> list = new ArrayList<>();
-        String sql = "SELECT * FROM alarm WHERE receiver_id = ? ORDER BY generate_date DESC";
+        String sql = "SELECT * FROM alarm WHERE receiver_id = ? AND isread = 'FALSE' ORDER BY generate_date DESC";
         try (Connection conn = MySql.getMySql().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
