@@ -41,10 +41,12 @@ public class SocketSession extends Thread{
             //
             String line;
             while ((line = in.readLine()) != null) {
+                System.out.println("socketReadLine");
                 if (line.startsWith("APPROVE_RESERVATION:")) {
                     //요청결과알림
                     addApprovedSchedule(line);
                 } else if (line.startsWith("REQUEST_RESERVATION")) {
+                    System.out.println("예약알림발송준비");
                     FacilityEquipmentRequestAlarm(line);
                 } else if (line.startsWith("CANCEL:")) {
                     // 스케줄 취소

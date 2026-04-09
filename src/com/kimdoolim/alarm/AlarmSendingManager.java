@@ -2,8 +2,6 @@ package com.kimdoolim.alarm;
 
 import com.kimdoolim.main.ClientMain;
 
-import java.io.PrintWriter;
-
 public class AlarmSendingManager {
     private static final AlarmSendingManager alarmSendingManager = new AlarmSendingManager();
 
@@ -20,10 +18,10 @@ public class AlarmSendingManager {
     //parameter는 receiverId, reservationId 임
     //type은 예약요청/반납요청/취소/반납안내/사용안내/요청결과/연체/사용시작
     public void sendingTextToSocketServer (String type, long parameter) {
-        PrintWriter out = new PrintWriter(ClientMain.out);
-        if(type.equals("예약요청")) out.println("REQUEST_RESERVATION:" + parameter); //parameter -> reservationId
-        else if(type.equals("취소")) out.println("CANCEL:" + parameter); //parameter -> reservationId
-        else if(type.equals("사용시작")) out.println("USE_START" + parameter); //parameter -> reservationId
-        else if(type.equals("예약승인")) out.println("APPROVE_RESERVATION:" + parameter); //parameter -> reservationId
+        System.out.println("이거 옴?");
+        if(type.equals("예약요청")) ClientMain.out.println("REQUEST_RESERVATION:" + parameter); //parameter -> reservationId
+        else if(type.equals("취소")) ClientMain.out.println("CANCEL:" + parameter); //parameter -> reservationId
+        else if(type.equals("사용시작")) ClientMain.out.println("USE_START" + parameter); //parameter -> reservationId
+        else if(type.equals("예약승인")) ClientMain.out.println("APPROVE_RESERVATION:" + parameter); //parameter -> reservationId
     }
 }

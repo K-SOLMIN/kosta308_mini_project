@@ -154,34 +154,58 @@ public class ReservationDAO {
   public int saveReservation(Reservation reservation) {
     Connection conn = db.getConnection();
     PreparedStatement pstmt = null;
-    int result = 0;
+    ResultSet rs = null;
+    int result = 0; // 기존 return값 유지
+    int generatedId = -1; // 소켓 전송용 임시 변수
 
     String sql = "INSERT INTO reservation " +
-        "(period_id, user_id, facility_id, equipment_id, purpose, " +
-        " created_at, reservation_date, status, real_use, target_type) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', 'false', ?)";
+            "(period_id, user_id, facility_id, equipment_id, purpose, " +
+            " created_at, reservation_date, status, real_use, target_type) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', 'false', ?)";
 
     try {
-      pstmt = conn.prepareStatement(sql);
+      // PK 반환 옵션 추가
+      pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
       pstmt.setInt(1, reservation.getPeriod().getPeriodId());
       pstmt.setInt(2, reservation.getUser().getUserId());
+
       if (reservation.getFacility() != null) pstmt.setLong(3, reservation.getFacility().getFacilityId());
       else pstmt.setNull(3, Types.BIGINT);
+
       if (reservation.getEquipment() != null) pstmt.setLong(4, reservation.getEquipment().getEquipmentId());
       else pstmt.setNull(4, Types.BIGINT);
+
       pstmt.setString(5, reservation.getPurpose());
       pstmt.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
       pstmt.setDate(7, Date.valueOf(reservation.getReservationDate()));
       pstmt.setString(8, reservation.getTargetType());
-      result = pstmt.executeUpdate();
-      db.commit(conn);
+
+      result = pstmt.executeUpdate(); // 실행 결과(1 또는 0) 저장
+
+      if (result > 0) {
+        // 실행 성공 시 PK 가져오기
+        rs = pstmt.getGeneratedKeys();
+        if (rs.next()) {
+          generatedId = rs.getInt(1);
+        }
+        db.commit(conn);
+      }
     } catch (SQLException e) {
       db.rollback(conn);
       System.out.println("예약 저장 실패: " + e.getMessage());
     } finally {
-      db.close(pstmt); db.close(conn);
+      db.close(rs);
+      db.close(pstmt);
+      db.close(conn);
     }
-    return result;
+
+    // 소켓 전송 (PK가 정상적으로 추출되었을 때만)
+    if (generatedId != -1) {
+      sendingManager.sendingTextToSocketServer("REQUEST_RESERVATION:", generatedId);
+    }
+
+    return result; // 기존 규격 그대로 반환!
   }
 
   // ─────────────────────────────────────────────────────

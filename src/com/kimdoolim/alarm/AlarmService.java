@@ -283,7 +283,7 @@ public class AlarmService {
                 "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
                 "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
                 "JOIN period p ON r.period_id = p.period_id " +
-                "WHERE r.reservation_id = ?";
+                "WHERE r.reservation_id = ? AND r.status = '승인'";
 
         try {
             pstmt = conn.prepareStatement(sql);
