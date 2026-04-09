@@ -25,10 +25,6 @@ public class AlarmReceiveThread extends Thread{
 
             while((alarmMsg = msgReader.readLine()) != null) {
                 System.out.println("\n" + alarmMsg);
-                insertTestReturnRequests(count);
-                ClientMain.out.println("USE_START:" + reservationId);
-                count++;
-                reservationId++;
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
