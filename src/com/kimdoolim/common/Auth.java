@@ -45,7 +45,7 @@ public class Auth {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                boolean isActive = Boolean.parseBoolean(rs.getString("IS_ACTIVE"));
+                boolean isActive = Boolean.parseBoolean(rs.getString("is_active"));
 
                 user = User.builder()
                     .userId(rs.getInt("USER_ID"))
@@ -58,7 +58,7 @@ public class Auth {
                     .gradeNo(rs.getInt("GRADE_NO"))
                     .classNo(rs.getInt("CLASS_NO"))
                     .isActive(isActive)
-                    .userStatus(rs.getString("user_status"))
+                    .userStatus(rs.getString("is_active"))
                     .build();
             }
 

@@ -236,6 +236,7 @@ public class AlarmService {
 
         } catch (SQLException e) {
             mysql.rollback(conn);
+            e.printStackTrace();
             System.out.println(">> 알림 저장 실패: " + e.getMessage());
         } finally {
             mysql.close(pstmt);

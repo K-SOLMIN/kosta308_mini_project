@@ -101,15 +101,16 @@ public class AlarmScheduler {
 
         // 2. 종료 시간 + 10분 계산
         //테스트로 endTime + 1분뒤에 보내는중
-        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).plusMinutes(1);
+        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).minusMinutes(9);
         long delay = Duration.between(LocalDateTime.now(), overdueCheckTime).getSeconds();
 
         if (delay < 0) delay = 3; // 이미 지난 경우 즉시(3초 뒤) 체크(테스트용)
-
+        System.out.println("연체알림 delay : " + delay);
         // 3. 스케줄 등록
         scheduler.schedule(() -> {
             // [중요] 10분 뒤 시점에 다시 DB 조회 (반납 여부 확인)
             boolean isReturned = alarmService.isAlreadyReturned(reservationId);
+            System.out.println("반납여부 ; " + isReturned);
 
             if (!isReturned) {
                 String message = "🔔 [연체 알림] 다음 사용자를 위해 빠른 반납 부탁드립니다.";
