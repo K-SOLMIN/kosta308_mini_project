@@ -1,5 +1,6 @@
 package com.kimdoolim.dao;
 
+import com.kimdoolim.alarm.AlarmSendingManager;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
@@ -13,6 +14,7 @@ import java.util.List;
 public class ReservationDAO {
 
   private final Database db = MySql.getMySql();
+  private final AlarmSendingManager sendingManager = AlarmSendingManager.getAlarmSendingManager();
 
   // ─────────────────────────────────────────────────────
   // 1. 교시 전체 조회
@@ -351,6 +353,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("예약승인", reservationId);
+
     return result;
   }
 

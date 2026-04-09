@@ -1,30 +1,29 @@
 package com.kimdoolim.alarm;
 
-import com.kimdoolim.dto.Alarm;
 import com.kimdoolim.main.ClientMain;
 
-import java.time.format.DateTimeFormatter;
+import java.io.PrintWriter;
 
 public class AlarmSendingManager {
+    private static final AlarmSendingManager alarmSendingManager = new AlarmSendingManager();
+
+    private AlarmSendingManager() { };
+
+    public static AlarmSendingManager getAlarmSendingManager() {
+        return alarmSendingManager;
+    }
     //알림 [타입] 시설예약 요청이 왔습니다 (2025-04-01 22:10)
 
     // :으로 구분하기때문에 문자열에 :이 포함되어있으면 안됩니다.
     // 타입은 반납요청/예약요청/강제취소/반납/사용/요청결과/연체
-    public void sendingAlarm(Alarm alarm) {
-        String fullContent = "";
-        String type = "[" + alarm.getType() + "]";
-        String content = alarm.getContent();
 
-        if(content.contains(":")) {
-            System.out.println("alarmMessage에는 :이 포함되면 안됩니다.");
-            return;
-        }
-
-        String date = alarm.getGenerateDate()
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-
-        fullContent = alarm.getReceiverId() + ":알림 " + type + " " + content + " (" + date + ")";
-
-        ClientMain.out.println(fullContent);
+    //parameter는 receiverId, reservationId 임
+    //type은 예약요청/반납요청/취소/반납안내/사용안내/요청결과/연체/사용시작
+    public void sendingTextToSocketServer (String type, long parameter) {
+        PrintWriter out = new PrintWriter(ClientMain.out);
+        if(type.equals("예약요청")) out.println("REQUEST_RESERVATION:" + parameter); //parameter -> reservationId
+        else if(type.equals("취소")) out.println("CANCEL:" + parameter); //parameter -> reservationId
+        else if(type.equals("사용시작")) out.println("USE_START" + parameter); //parameter -> reservationId
+        else if(type.equals("예약승인")) out.println("APPROVE_RESERVATION:" + parameter); //parameter -> reservationId
     }
 }
