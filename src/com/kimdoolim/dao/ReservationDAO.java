@@ -4,6 +4,7 @@ import com.kimdoolim.alarm.AlarmSendingManager;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
+import com.kimdoolim.main.ClientMain;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -378,7 +379,7 @@ public class ReservationDAO {
       db.close(pstmt); db.close(conn);
     }
 
-    sendingManager.sendingTextToSocketServer("예약승인", reservationId);
+    ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":APPROVE");
 
     return result;
   }
@@ -408,6 +409,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":REJECT");
+
     return result;
   }
 
@@ -436,6 +440,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("취소", reservationId);
+
     return result;
   }
 
