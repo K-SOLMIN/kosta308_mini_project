@@ -13,7 +13,7 @@ public class ServerMain {
 
     public static void main(String[] args) {
         AlarmScheduler alarmScheduler = AlarmScheduler.getAlarmScheduler();
-        alarmScheduler.startScheduleTest(); // 스케줄러테스트 시작
+        alarmScheduler.startSchedule();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("🚀 [알림 서버] 포트 " + PORT + "에서 대기 중...");

@@ -267,6 +267,58 @@ public class AlarmService {
         return result;
     }
 
+    public int getUnreadAlarmCount(int userId) {
+        String sql = "SELECT COUNT(*) FROM alarm WHERE receiver_id = ? AND isread = 'FALSE'";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Alarm> getMyAlarms(int userId) {
+        List<Alarm> list = new ArrayList<>();
+        String sql = "SELECT * FROM alarm WHERE receiver_id = ? ORDER BY generate_date DESC";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Alarm alarm = Alarm.builder()
+                            .alarmId(rs.getInt("alarm_id"))
+                            .receiverId(rs.getInt("receiver_id"))
+                            .type(rs.getString("type"))
+                            .generateDate(rs.getTimestamp("generate_date").toLocalDateTime())
+                            .content(rs.getString("content"))
+                            .isRead(rs.getString("isread"))
+                            .readDate(rs.getDate("readdate") != null ? rs.getDate("readdate").toLocalDate() : null)
+                            .build();
+                    list.add(alarm);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void markAllAlarmsAsRead(int userId) {
+        String sql = "UPDATE alarm SET isread = 'TRUE', readdate = CURDATE() WHERE receiver_id = ? AND isread = 'FALSE'";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.executeUpdate();
+            MySql.getMySql().commit(conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Reservation getReservationById(long reservationId) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;

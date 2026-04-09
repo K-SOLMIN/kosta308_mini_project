@@ -1,6 +1,8 @@
 package com.kimdoolim.main.view;
 
+import com.kimdoolim.alarm.AlarmService;
 import com.kimdoolim.common.AppScanner;
+import com.kimdoolim.common.Auth;
 import com.kimdoolim.main.ClientMain;
 import com.kimdoolim.manager.BlockPeriodManageView;
 import com.kimdoolim.manager.FacilityEquipmentView;
@@ -12,6 +14,7 @@ import java.util.Scanner;
 public class MainView {
 
     private final Scanner scanner = AppScanner.getScanner();
+    private final AlarmService alarmService = AlarmService.getAlarmService();
 
     // ─────────────────────────────────────────────────────
     // 비활성 사용자 메뉴 (휴직/전근)
@@ -51,10 +54,12 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void userMainView() {
         while (true) {
+            int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
+            String alarmLabel = "알림조회(" + unread + ")";
             System.out.println("=================================================================");
             System.out.println("                          사용자 메인 메뉴                          ");
             System.out.println("=================================================================");
-            System.out.println("  1. 예약하기 || 2. 마이페이지 || 3. 예약 내역 확인 || 0. 종료 ");
+            System.out.println("  1. 예약하기 || 2. 마이페이지 || 3. 예약 내역 확인 || 4. " + alarmLabel + " || 0. 종료 ");
             System.out.println("=================================================================");
             System.out.print("메뉴 선택 : ");
 
@@ -72,6 +77,10 @@ public class MainView {
                 case 3:
                     System.out.println(">> [예약 내역 확인]으로 이동합니다.");
                     new ReservationView().reservationHistoryMenu();
+                    break;
+                case 4:
+                    System.out.println(">> [알림조회]로 이동합니다.");
+                    new AlarmView().alarmMenu();
                     break;
                 case 0:
                     System.out.println("[프로그램을 종료합니다.]");
@@ -98,10 +107,12 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void middleAdminMainView() {
         while (true) {
+            int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
+            String alarmLabel = "알림조회(" + unread + ")";
             System.out.println("========================================================================");
             System.out.println("                           중간 관리자 메인 메뉴                          ");
             System.out.println("========================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 마이페이지 || 4. 예약하기 || 0. 종료");
+            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 마이페이지 || 4. 예약하기 || 5. " + alarmLabel + " || 0. 종료");
             System.out.println("========================================================================");
             System.out.print("메뉴 선택 : ");
 
@@ -124,8 +135,19 @@ public class MainView {
                     System.out.println(">> [예약 하기]로 이동합니다.");
                     new ReservationView().reservationMenu();
                     break;
+                case 5:
+                    System.out.println(">> [알림조회]로 이동합니다.");
+                    new AlarmView().alarmMenu();
+                    break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
+                    try {
+                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
+                            ClientMain.socket.close();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     return;
                 default:
                     System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
@@ -143,10 +165,12 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void adminMainView() {
         while (true) {
+            int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
+            String alarmLabel = "알림조회(" + unread + ")";
             System.out.println("============================================================================================");
             System.out.println("                                     상위 관리자 메인 메뉴                                     ");
             System.out.println("============================================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 사용자 관리 || 4. 마이페이지 || 5. 예약하기 || 6. 제한기간 관리  || 0. 로그아웃");
+            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 사용자 관리 || 4. 마이페이지 || 5. 예약하기 || 6. 제한기간 관리 || 7. " + alarmLabel + " || 0. 로그아웃");
             System.out.println("============================================================================================");
             System.out.print("메뉴 선택 : ");
 
@@ -173,15 +197,23 @@ public class MainView {
                     System.out.println(">> [예약 하기]로 이동합니다.");
                     new ReservationView().reservationMenu();
                     break;
-
                 case 6:
                     System.out.println(">> [제한기간 관리]로 이동합니다.");
                     new BlockPeriodManageView().blockPeriodManageView();
                     break;
-
-
+                case 7:
+                    System.out.println(">> [알림조회]로 이동합니다.");
+                    new AlarmView().alarmMenu();
+                    break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
+                    try {
+                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
+                            ClientMain.socket.close();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     return;
                 default:
                     System.out.println("잘못된 입력입니다. 다시 선택해주세요.");

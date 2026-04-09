@@ -484,6 +484,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("반납완료", reservationId);
+
     return result;
   }
 

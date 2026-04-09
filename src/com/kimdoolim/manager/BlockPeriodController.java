@@ -28,15 +28,15 @@ public class BlockPeriodController {
                 "p.period_name " +
                 "FROM block_period bp " +
                 "LEFT JOIN period p ON bp.period_id = p.period_id " +
-                "ORDER BY bp.block_period_id DESC";
+                "ORDER BY bp.block_period_id ASC";
             pstmt = conn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("id",         rs.getLong("block_period_id"));
-                map.put("start",      rs.getDate("block_period_startdate").toLocalDate());
-                map.put("end",        rs.getDate("block_period_enddate").toLocalDate());
-                map.put("desc",       rs.getString("block_period_description"));
+                map.put("id", rs.getLong("block_period_id"));
+                map.put("start", rs.getDate("block_period_startdate").toLocalDate());
+                map.put("end", rs.getDate("block_period_enddate").toLocalDate());
+                map.put("desc", rs.getString("block_period_description"));
                 map.put("periodName", rs.getString("period_name")); // null이면 종일
                 list.add(map);
             }
@@ -146,8 +146,62 @@ public class BlockPeriodController {
     }
 
     // ─────────────────────────────────────────────────────
-    // 6. 수정 (period_id 포함)
+    // 5-2. ID로 단건 조회
     // ─────────────────────────────────────────────────────
+    public Map<String, Object> getBlockPeriodById(long id) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Map<String, Object> map = null;
+        try {
+            String sql = "SELECT bp.block_period_id, bp.block_period_startdate, " +
+                "bp.block_period_enddate, bp.block_period_description, bp.period_id, p.period_name " +
+                "FROM block_period bp " +
+                "LEFT JOIN period p ON bp.period_id = p.period_id " +
+                "WHERE bp.block_period_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, id);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                map = new HashMap<>();
+                map.put("id",         rs.getLong("block_period_id"));
+                map.put("start",      rs.getDate("block_period_startdate").toLocalDate());
+                map.put("end",        rs.getDate("block_period_enddate").toLocalDate());
+                map.put("desc",       rs.getString("block_period_description"));
+                map.put("periodId",   rs.getObject("period_id"));
+                map.put("periodName", rs.getString("period_name"));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return map;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 6. 수정 (ID 기준, period_id 포함)
+    // ─────────────────────────────────────────────────────
+    public int updateBlockMasterById(long id, LocalDate start, LocalDate end,
+                                     String nDesc, Integer periodId) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        try {
+            String sql = "UPDATE block_period " +
+                "SET block_period_startdate=?, block_period_enddate=?, " +
+                "    block_period_description=?, period_id=? " +
+                "WHERE block_period_id=?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setDate(1, Date.valueOf(start));
+            pstmt.setDate(2, Date.valueOf(end));
+            pstmt.setString(3, nDesc);
+            if (periodId != null) pstmt.setInt(4, periodId);
+            else pstmt.setNull(4, Types.INTEGER);
+            pstmt.setLong(5, id);
+            int res = pstmt.executeUpdate();
+            mysql.commit(conn);
+            return res;
+        } catch (SQLException e) { mysql.rollback(conn); return 0; }
+        finally { mysql.close(pstmt); mysql.close(conn); }
+    }
+
     public int updateBlockMaster(String oldDesc, LocalDate start, LocalDate end,
                                  String nDesc, Integer periodId) {
         Connection conn = mysql.getConnection();
@@ -208,7 +262,55 @@ public class BlockPeriodController {
     }
 
     // ─────────────────────────────────────────────────────
-    // 8. 전체 교시 목록 조회 (View에서 교시 선택 시 사용)
+    // 8. 시설 목록 조회 (id, name, location)
+    // ─────────────────────────────────────────────────────
+    public List<Map<String, Object>> getAllFacilities() {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<Map<String, Object>> list = new ArrayList<>();
+        try {
+            pstmt = conn.prepareStatement(
+                "SELECT facility_id, name, location FROM facility WHERE is_delete = 'false' ORDER BY facility_id");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id",       rs.getLong("facility_id"));
+                map.put("name",     rs.getString("name"));
+                map.put("location", rs.getString("location"));
+                list.add(map);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return list;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 9. 비품 목록 조회 (id, name, location)
+    // ─────────────────────────────────────────────────────
+    public List<Map<String, Object>> getAllEquipments() {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<Map<String, Object>> list = new ArrayList<>();
+        try {
+            pstmt = conn.prepareStatement(
+                "SELECT equipment_id, name, location FROM equipment WHERE check_delete = 'false' ORDER BY equipment_id");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id",       rs.getLong("equipment_id"));
+                map.put("name",     rs.getString("name"));
+                map.put("location", rs.getString("location"));
+                list.add(map);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return list;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 10. 전체 교시 목록 조회 (View에서 교시 선택 시 사용)
     // ─────────────────────────────────────────────────────
     public List<Map<String, Object>> getAllPeriods() {
         Connection conn = mysql.getConnection();

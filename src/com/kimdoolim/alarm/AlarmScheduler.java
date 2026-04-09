@@ -30,31 +30,76 @@ public class AlarmScheduler {
 
     public void startSchedule() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime targetTime = now.toLocalDate().atTime(8, 0);
-        if (now.isAfter(targetTime)) {
-            targetTime = targetTime.plusDays(1);
+        LocalDateTime todaySix = now.toLocalDate().atTime(6, 0);
+        LocalDateTime nextSix = now.isAfter(todaySix) ? todaySix.plusDays(1) : todaySix;
+
+        // 오전 6시 이후에 서버가 시작됐으면 2초 뒤 즉시 조회
+        if (now.isAfter(todaySix)) {
+            scheduler.schedule(this::getTodayApprovedReservation, 2, TimeUnit.SECONDS);
+            System.out.println("📢 [알림 시스템] 오전 6시 이후 서버 시작 감지 → 2초 뒤 즉시 조회 실행");
         }
-        long initialDelay = Duration.between(now, targetTime).getSeconds();
+
+        long initialDelay = Duration.between(now, nextSix).getSeconds();
         scheduler.scheduleAtFixedRate(
                 this::getTodayApprovedReservation,
                 initialDelay,
                 TimeUnit.DAYS.toSeconds(1),
                 TimeUnit.SECONDS
         );
-        System.out.println("📢 [알림 시스템] 매일 오전 8시에 알림 조회를 시작합니다. 다음 실행: " + targetTime);
+        System.out.println("📢 [알림 시스템] 매일 오전 6시에 알림 조회를 시작합니다. 다음 실행: " + nextSix);
     }
 
     public void addReservationAlarm(Reservation reservation) {
         if (reservation == null || !reservation.getReservationDate().equals(LocalDate.now())) return;
 
+        // 중복 등록 방지: 이미 등록된 스케줄이 있으면 먼저 취소
+        if (scheduledTasks.containsKey(reservation.getReservationId())) {
+            cancelReservationAlarm(reservation.getReservationId());
+        }
+
         System.out.println("🆕 [실시간 등록] 당일 예약 감지: ID " + reservation.getReservationId());
 
         List<ScheduledFuture<?>> futures = new ArrayList<>();
-        futures.add(scheduleTask(reservation, "START", reservation.getPeriod().getStartTime()));
-        futures.add(scheduleTask(reservation, "RETURN", reservation.getPeriod().getEndTime()));
-        futures.add(scheduleOverdueAlarm(reservation));  // 연체알림 동시 등록
+        LocalTime now = LocalTime.now();
+        LocalTime startTime = reservation.getPeriod().getStartTime();
+        LocalTime endTime = reservation.getPeriod().getEndTime();
 
-        scheduledTasks.put(reservation.getReservationId(), futures);
+        String resourceName = (reservation.getFacility() != null)
+                ? reservation.getFacility().getName()
+                : reservation.getEquipment().getName();
+
+        // START 알림: startTime이 아직 안 지난 경우만 등록
+        if (now.isBefore(startTime)) {
+            if (now.isAfter(startTime.minusMinutes(10))) {
+                // 10분 이내 → 남은 분 표시하여 즉시 발송
+                long minutesLeft = Duration.between(now, startTime).toMinutes();
+                String msg = String.format("🔔 [사용 안내] '%s' 사용 %d분 전입니다.", resourceName, minutesLeft);
+                alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), msg, "사용안내");
+                System.out.println("🔔 [즉시 사용안내 발송] " + reservation.getUser().getName() + "님께 전송 완료");
+            } else {
+                futures.add(scheduleTask(reservation, "START", startTime));
+            }
+        }
+
+        // RETURN 알림: endTime - 10분이 아직 안 지난 경우만 등록
+        if (now.isBefore(endTime.minusMinutes(10))) {
+            futures.add(scheduleTask(reservation, "RETURN", endTime));
+        } else if (now.isBefore(endTime)) {
+            // 10분 이내 → 남은 분 표시하여 즉시 발송
+            long minutesLeft = Duration.between(now, endTime).toMinutes();
+            String msg = String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, minutesLeft);
+            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), msg, "반납안내");
+            System.out.println("🔔 [즉시 반납안내 발송] " + reservation.getUser().getName() + "님께 전송 완료");
+        }
+
+        // 연체 알림: endTime + 2분이 아직 안 지난 경우만 등록
+        if (now.isBefore(endTime.plusMinutes(2))) {
+            futures.add(scheduleOverdueAlarm(reservation));
+        }
+
+        if (!futures.isEmpty()) {
+            scheduledTasks.put(reservation.getReservationId(), futures);
+        }
     }
 
     public void cancelReservationAlarm(long reservationId) {
@@ -78,11 +123,13 @@ public class AlarmScheduler {
         for (Reservation res : todayReservations) {
             addReservationAlarm(res);
         }
+
     }
 
     private ScheduledFuture<?> scheduleTask(Reservation reservation, String type, LocalTime targetLocalTime) {
         LocalDateTime alarmTime = LocalDateTime.of(LocalDate.now(), targetLocalTime).minusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), alarmTime).getSeconds();
+        System.out.println("delay : " + delay + " / type: " + type);
         if (delay < 0) delay = 3;
 
         return scheduler.schedule(() -> {
@@ -90,23 +137,26 @@ public class AlarmScheduler {
                     ? reservation.getFacility().getName()
                     : reservation.getEquipment().getName();
 
+            long actualMinutesLeft = Duration.between(LocalTime.now(), targetLocalTime).toMinutes();
             String message = (type.equals("START"))
-                    ? String.format("🔔 [사용안내] '%s' 사용 10분 전입니다.", resourceName)
-                    : String.format("🔔 [반납안내] '%s' 반납 10분 전입니다.", resourceName);
+                    ? String.format("🔔 [사용안내] '%s' 사용시작 %d분 전입니다.", resourceName, actualMinutesLeft)
+                    : String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, actualMinutesLeft);
 
-            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, type);
+            String alarmType = type.equals("START") ? "사용안내" : "반납안내";
+            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, alarmType);
             System.out.println("🔔 [" + type + " 발송] " + reservation.getUser().getName() + "님께 전송 완료");
         }, delay, TimeUnit.SECONDS);
     }
 
     // endTime에 반납 여부 확인 후 연체알림 발송
     private ScheduledFuture<?> scheduleOverdueAlarm(Reservation reservation) {
-        LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), reservation.getPeriod().getEndTime());
+        // endTime + 10분에 실행
+        LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), reservation.getPeriod().getEndTime())
+                .plusMinutes(1);
         long delay = Duration.between(LocalDateTime.now(), endDateTime).getSeconds();
         if (delay < 0) delay = 3;
 
         return scheduler.schedule(() -> {
-            // 실행 시점에 반납 여부 DB 조회
             boolean isReturned = alarmService.isAlreadyReturned(reservation.getReservationId());
 
             if (isReturned) {

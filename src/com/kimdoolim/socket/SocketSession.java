@@ -83,6 +83,10 @@ public class SocketSession extends Thread{
                     } else {
                         System.out.println("⚠️ [취소 실패] 예약 ID " + resId + " 정보를 찾을 수 없습니다.");
                     }
+            } else if (line.startsWith("RETURN_COMPLETE:")) {
+                    long resId = Long.parseLong(line.split(":", 2)[1]);
+                    AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
+                    System.out.println("✅ [반납완료] 예약 ID: " + resId + " 반납알림 + 연체알림 스케줄 취소");
                 } else if (line.contains(":")) {
                     sendingAlarm(line);
 
@@ -155,11 +159,10 @@ public class SocketSession extends Thread{
         String targetType = (reservation.getFacility() != null) ? "시설" : "비품";
 
         if ("APPROVE".equals(status)) {
-            AlarmScheduler.getAlarmScheduler().addReservationAlarm(reservation);
-
             String msg = "\u2705 [예약결과] " + targetType + " '" + targetName + "' 예약이 승인되었습니다!";
             alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
 
+            AlarmScheduler.getAlarmScheduler().addReservationAlarm(reservation);
             System.out.println("📅 [승인 완료] ID: " + resId + " 스케줄 등록 및 사용자 알림 전송");
 
         } else if ("REJECT".equals(status)) {
