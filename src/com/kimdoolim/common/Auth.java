@@ -45,7 +45,7 @@ public class Auth {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                boolean isActive = Boolean.parseBoolean(rs.getString("user_status"));
+                boolean isActive = Boolean.parseBoolean(rs.getString("IS_ACTIVE"));
 
                 user = User.builder()
                     .userId(rs.getInt("USER_ID"))

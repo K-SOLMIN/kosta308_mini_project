@@ -178,4 +178,10 @@ public class ReservationService {
     int result = reservationDAO.forcecancelReservation(reservationId, reason);
     return result > 0 ? "예약이 강제 취소되었습니다." : "강제 취소 처리 중 오류가 발생했습니다.";
   }
+
+  //  block_schedule 테이블 체크
+  public String validateBlockSchedule(LocalDate date, Period period, Long facilityId, Long equipmentId) {
+    return new BlockScheduleService().checkBlocked(date, period.getPeriodId(), facilityId, equipmentId);
+  }
 }
+

@@ -26,6 +26,7 @@ public class FacilityEquipmentView {
       System.out.println("=============================");
       System.out.println(" 1. 시설 관리");
       System.out.println(" 2. 비품 관리");
+      System.out.println(" 3. 교시별 예약 차단 관리");
       System.out.println(" 0. 뒤로 가기");
       System.out.println("=============================");
       System.out.print("메뉴 선택: ");
@@ -35,6 +36,7 @@ public class FacilityEquipmentView {
       switch (choice) {
         case 1: facilityMenu(); break;
         case 2: equipmentMenu(); break;
+        case 3: new BlockScheduleView().blockScheduleMenu(); break;
         case 0: return;
         default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
       }

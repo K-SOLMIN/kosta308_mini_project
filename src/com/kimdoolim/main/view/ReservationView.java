@@ -109,11 +109,6 @@ public class ReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
-      // 상태 표시 변환
-      // 대기     → 승인 대기중
-      // 승인     → 오늘 날짜이고 교시 시간대 안이면 '사용중', 아니면 '승인'
-      // 반납완료 → 다음 교시 시작 전까지 반납 안 했으면 '반납완료(반납지연)'
-      // 나머지   → DB 값 그대로
       String statusDisplay;
       if (r.getStatus().equals("대기")) {
         statusDisplay = "승인 대기중";
@@ -125,13 +120,12 @@ public class ReservationView {
             && !now.isAfter(r.getPeriod().getEndTime());
         statusDisplay = (isToday && isDuringTime) ? "사용중" : "승인";
       } else if (r.getStatus().equals("반납완료") && r.getReturnedAt() != null) {
-        // 현재 교시 종료 시간 이후 첫 번째 교시 시작 시간 = 반납 마감
         LocalTime currentEnd = r.getPeriod().getEndTime();
         LocalTime deadlineTime = allPeriods.stream()
             .map(Period::getStartTime)
             .filter(t -> t.isAfter(currentEnd))
             .findFirst()
-            .orElse(currentEnd); // 마지막 교시면 종료 시간 기준
+            .orElse(currentEnd);
         LocalDateTime deadline = r.getReservationDate().atTime(deadlineTime);
         statusDisplay = r.getReturnedAt().isAfter(deadline)
             ? "반납완료(반납지연)" : "반납완료";
@@ -234,7 +228,14 @@ public class ReservationView {
       return;
     }
 
-    // 제한 기간 체크
+    // 교시별 차단 체크 (block_schedule)
+    String scheduleError = reservationService.validateBlockSchedule(date, period, facility.getFacilityId(), null);
+    if (scheduleError != null) {
+      System.out.println(">> " + scheduleError);
+      return;
+    }
+
+    // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, facility.getFacilityId(), null);
     if (blockError != null) {
       System.out.println(">> " + blockError);
@@ -286,7 +287,14 @@ public class ReservationView {
       return;
     }
 
-    // 제한 기간 체크
+    // 교시별 차단 체크 (block_schedule)
+    String scheduleError = reservationService.validateBlockSchedule(date, period, null, equipment.getEquipmentId());
+    if (scheduleError != null) {
+      System.out.println(">> " + scheduleError);
+      return;
+    }
+
+    // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, null, equipment.getEquipmentId());
     if (blockError != null) {
       System.out.println(">> " + blockError);
