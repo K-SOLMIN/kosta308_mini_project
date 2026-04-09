@@ -173,6 +173,27 @@ public class AlarmService {
         return list;
     }
 
+    public int getManagerIdByReservationId(long resId) {
+        // 시설(facility) 또는 비품(equipment)의 manager_id를 가져오는 쿼리
+        // IFNULL이나 COALESCE를 써서 둘 중 하나라도 걸리게 처리합니다.
+        String sql = "SELECT COALESCE(f.manager_id, e.manager_id) as manager_id " +
+                "FROM reservation r " +
+                "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                "WHERE r.reservation_id = ?";
+
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, resId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("manager_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1; // 못 찾으면 -1 반환
+    }
+
     /**
      * 반납 여부 확인 (RETURN_REQUEST에 해당 예약 ID가 있고, 상태가 완료인지 확인)
      * 선생님의 로직대로 STATUS가 FALSE인 경우 연체로 판단하도록 작성

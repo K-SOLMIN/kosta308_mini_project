@@ -38,11 +38,36 @@ public class SocketSession extends Thread{
             }
 
             // receiverId : 알림내용 을 :로 구분해서 map.get(receiverId)로 PrintWriter가져와서 해당유저에게 알림전달
+            //
             String line;
             while ((line = in.readLine()) != null) {
-                if (line.startsWith("APPROVED_RESERVATION:")) {
-                    // 스케줄 등록 요청
+                if (line.startsWith("APPROVE_RESERVATION:")) {
+                    //요청결과알림
                     addApprovedSchedule(line);
+                } else if (line.startsWith("REQUEST_RESERVATION")) {
+                    long resId = Long.parseLong(line.split(":")[1]);
+
+                    // 1. 해당 예약의 담당 매니저 ID 조회
+                    int managerId = alarmService.getManagerIdByReservationId(resId);
+
+                    if (managerId != -1) {
+                        // 2. 매니저의 출력 스트림(PrintWriter) 가져오기
+                        PrintWriter managerOut = clientMap.get(managerId);
+
+                        // 16진수 이모지: 📩 (0x1F4E9)
+                        String msg = "\ud83d\udce9 [예약 요청] 관리 중인 자원에 새로운 예약 신청(ID: " + resId + ")이 들어왔습니다.";
+
+                        if (managerOut != null) {
+                            managerOut.println(msg);
+                            System.out.println("📧 [매니저 알림] 예약 " + resId + " -> 매니저 " + managerId + "에게 전송");
+                        } else {
+                            // 매니저가 오프라인일 때 DB에 저장하는 로직이 있다면 여기 추가
+                            alarmService.sendAndSaveAlarm(managerId, msg, "REQUEST");
+                            System.out.println("⚠️ [매니저 부재] 매니저 " + managerId + " 오프라인. DB 저장됨.");
+                        }
+                    } else {
+                        System.out.println("❌ [알림 실패] 예약 " + resId + "의 매니저 정보를 찾을 수 없습니다.");
+                    }
                 } else if (line.startsWith("CANCEL:")) {
                     // 스케줄 취소
                     long resId = Long.parseLong(line.split(":", 2)[1]);

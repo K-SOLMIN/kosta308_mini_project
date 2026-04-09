@@ -61,8 +61,8 @@ public class AlarmScheduler {
 
         List<ScheduledFuture<?>> futures = new ArrayList<>();
         System.out.println("🆕 [실시간 등록] 당일 예약 감지: ID " + reservation.getReservationId());
-        futures.add(scheduleTask(reservation, "START_RESERVATION", reservation.getPeriod().getStartTime()));
-        futures.add(scheduleTask(reservation, "END_RESERVATION", reservation.getPeriod().getEndTime()));
+        futures.add(scheduleTask(reservation, "[사용안내]", reservation.getPeriod().getStartTime()));
+        futures.add(scheduleTask(reservation, "[반납알림]", reservation.getPeriod().getEndTime()));
 
         // 예약 ID로 task 저장
         scheduledTasks.put(reservation.getReservationId(), futures);
@@ -101,7 +101,7 @@ public class AlarmScheduler {
 
         // 2. 종료 시간 + 10분 계산
         //테스트로 endTime + 1분뒤에 보내는중
-        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).minusMinutes(9);
+        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).plusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), overdueCheckTime).getSeconds();
 
         if (delay < 0) delay = 3; // 이미 지난 경우 즉시(3초 뒤) 체크(테스트용)
