@@ -1,12 +1,12 @@
 package com.kimdoolim.main.view;
 
 import com.kimdoolim.common.AppScanner;
+import com.kimdoolim.main.ClientMain;
 import com.kimdoolim.manager.BlockPeriodManageView;
 import com.kimdoolim.manager.FacilityEquipmentView;
 import com.kimdoolim.manager.ManagerReservationView;
-import com.kimdoolim.main.view.MyPageView;
-import com.kimdoolim.main.view.UserManageView;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class MainView {
@@ -75,6 +75,13 @@ public class MainView {
                     break;
                 case 0:
                     System.out.println("[프로그램을 종료합니다.]");
+                    try {
+                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
+                            ClientMain.socket.close();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     return;
                 default:
                     System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
