@@ -202,7 +202,7 @@ public class ReservationDAO {
 
     // 소켓 전송 (PK가 정상적으로 추출되었을 때만)
     if (generatedId != -1) {
-      sendingManager.sendingTextToSocketServer("REQUEST_RESERVATION:", generatedId);
+      sendingManager.sendingTextToSocketServer("예약요청", generatedId);
     }
 
     return result; // 기존 규격 그대로 반환!

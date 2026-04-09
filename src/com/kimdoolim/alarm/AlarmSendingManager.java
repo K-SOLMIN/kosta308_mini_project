@@ -18,10 +18,15 @@ public class AlarmSendingManager {
     //parameter는 receiverId, reservationId 임
     //type은 예약요청/반납요청/취소/반납안내/사용안내/요청결과/연체/사용시작
     public void sendingTextToSocketServer (String type, long parameter) {
-        System.out.println("이거 옴?");
+        if (ClientMain.out == null) {
+            System.out.println("[AlarmSendingManager] 소켓 미연결 - 전송 불가 (type=" + type + ", param=" + parameter + ")");
+            return;
+        }
+        System.out.println("[AlarmSendingManager] 전송 시도: type=" + type + ", param=" + parameter);
         if(type.equals("예약요청")) ClientMain.out.println("REQUEST_RESERVATION:" + parameter); //parameter -> reservationId
         else if(type.equals("취소")) ClientMain.out.println("CANCEL:" + parameter); //parameter -> reservationId
-        else if(type.equals("사용시작")) ClientMain.out.println("USE_START" + parameter); //parameter -> reservationId
+        else if(type.equals("사용시작")) ClientMain.out.println("USE_START:" + parameter); //parameter -> reservationId  (콜론 추가)
         else if(type.equals("예약승인")) ClientMain.out.println("APPROVE_RESERVATION:" + parameter); //parameter -> reservationId
+        else System.out.println("[AlarmSendingManager] 알 수 없는 타입: " + type);
     }
 }
