@@ -159,10 +159,10 @@ public class ReservationView {
       return;
     }
 
-    System.out.println("──────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-12s %-8s %-6s %-15s%n",
-        "번호", "예약날짜", "교시", "구분", "시설/비품명");
-    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.println("────────────────────────────────────────────────────────────────────");
+    System.out.printf("%-4s %-12s %-22s %-6s %-15s%n",
+        "번호", "예약날짜", "교시 (시작~종료)", "구분", "시설/비품명");
+    System.out.println("────────────────────────────────────────────────────────────────────");
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -170,15 +170,18 @@ public class ReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
-      System.out.printf("%-4d %-12s %-8s %-6s %-15s%n",
+      String periodDisplay = r.getPeriod().getPeriodName()
+          + " (" + r.getPeriod().getStartTime() + "~" + r.getPeriod().getEndTime() + ")";
+
+      System.out.printf("%-4d %-12s %-22s %-6s %-15s%n",
           i + 1,
           r.getReservationDate().toString(),
-          r.getPeriod().getPeriodName(),
+          periodDisplay,
           r.getTargetType().equals("FACILITY") ? "시설" : "비품",
           targetName
       );
     }
-    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.println("────────────────────────────────────────────────────────────────────");
 
     System.out.print("반납할 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -441,8 +444,10 @@ public class ReservationView {
     System.out.println("\n── 비품 선택 ──────────────────────");
     for (int i = 0; i < equipments.size(); i++) {
       Equipment e = equipments.get(i);
-      System.out.printf(" %d. %s  [위치: %s]%n",
-          i + 1, e.getName(), e.getLocation());
+      String summary = (e.getStatusSummary() != null && !e.getStatusSummary().isEmpty())
+          ? "  [낱개: " + e.getStatusSummary() + "]" : "";
+      System.out.printf(" %d. %s  [위치: %s]%s%n",
+          i + 1, e.getName(), e.getLocation(), summary);
     }
     System.out.println(" 0. 뒤로");
     System.out.print("비품 선택: ");

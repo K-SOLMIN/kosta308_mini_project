@@ -122,4 +122,19 @@ public class FacilityEquipmentService {
     int result = facilityEquipmentDAO.updateEquipmentManager(equipmentId, managerId);
     return result > 0 ? "담당자가 변경되었습니다." : "변경 중 오류가 발생했습니다.";
   }
+
+  // ─────────────────────────────────────────────────────
+  // 13. 비품 낱개 목록 조회
+  // ─────────────────────────────────────────────────────
+  public List<EquipmentDetail> getEquipmentDetails(long equipmentId) {
+    return facilityEquipmentDAO.findEquipmentDetails(equipmentId);
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 14. 비품 낱개 상태 수정
+  // ─────────────────────────────────────────────────────
+  public String updateEquipmentDetailStatus(long equipmentDetailId, String status) {
+    int result = facilityEquipmentDAO.updateEquipmentDetailStatus(equipmentDetailId, status);
+    return result > 0 ? "낱개 상태가 [" + status + "] 로 변경되었습니다." : "상태 변경 중 오류가 발생했습니다.";
+  }
 }

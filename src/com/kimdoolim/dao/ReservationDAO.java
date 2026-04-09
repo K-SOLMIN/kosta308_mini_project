@@ -88,8 +88,12 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT equipment_id, name, location, status " +
-        "FROM equipment WHERE check_delete = 'false' AND status = '정상'";
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.status, " +
+        "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
+        "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
+        "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
+        "       ) AS status_summary " +
+        "FROM equipment e WHERE e.check_delete = 'false' AND e.status = '정상'";
 
     try {
       pstmt = conn.prepareStatement(sql);
@@ -100,6 +104,7 @@ public class ReservationDAO {
             .name(rs.getString("name"))
             .location(rs.getString("location"))
             .status(rs.getString("status"))
+            .statusSummary(rs.getString("status_summary"))
             .build());
       }
     } catch (SQLException e) {
@@ -268,6 +273,8 @@ public class ReservationDAO {
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.user_id = ? AND r.status = '승인' " +
+        "AND (r.reservation_date < CURDATE() " +
+        "     OR (r.reservation_date = CURDATE() AND p.start_time <= CURTIME())) " +
         "ORDER BY r.reservation_date ASC";
 
     try {
@@ -337,7 +344,7 @@ public class ReservationDAO {
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.status = " + status + " " +
         managerCondition +
-        "ORDER BY r.reservation_date DESC, r.created_at DESC";
+        "ORDER BY r.created_at ASC";
 
     try {
       pstmt = conn.prepareStatement(sql);

@@ -185,27 +185,31 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(90) : "─".repeat(74);
+    String div = isAdmin ? "─".repeat(110) : "─".repeat(94);
     System.out.println(div);
     if (isAdmin) {
-      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-10s%n",
-          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "담당자");
+      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-20s %-10s%n",
+          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "낱개현황", "담당자");
     } else {
-      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s%n",
-          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태");
+      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-20s%n",
+          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "낱개현황");
     }
     System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Equipment e = list.get(i);
-      String qtyStr = e.getQuantity() > 0 ? e.getQuantity() + "개" : "-";
+      String qtyStr     = e.getQuantity() > 0 ? e.getQuantity() + "개" : "-";
+      String summaryStr = (e.getStatusSummary() != null && !e.getStatusSummary().isEmpty())
+          ? e.getStatusSummary() : "-";
       if (isAdmin) {
         String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
-        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-10s%n",
-            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(), e.getStatus(), managerName);
+        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-20s %-10s%n",
+            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(),
+            e.getStatus(), summaryStr, managerName);
       } else {
-        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s%n",
-            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(), e.getStatus());
+        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-20s%n",
+            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(),
+            e.getStatus(), summaryStr);
       }
     }
     System.out.println(div);
@@ -398,6 +402,8 @@ public class FacilityEquipmentView {
 
   // ─────────────────────────────────────────────────────
   // 비품 상태 수정 흐름
+  //  - 낱개가 없는 비품(quantity==0) : 기존대로 세트 상태만 변경
+  //  - 낱개가 있는 비품(quantity>0)  : 세트 전체 or 낱개 개별 선택
   // ─────────────────────────────────────────────────────
   private void updateEquipmentStatusFlow() {
     System.out.println("\n[비품 상태 수정]");
@@ -418,11 +424,71 @@ public class FacilityEquipmentView {
 
     Equipment target = list.get(index - 1);
 
+    // 낱개가 있는 비품이면 세트 전체 vs 낱개 개별 선택
+    if (target.getQuantity() > 0) {
+      System.out.println("\n── 상태 수정 방식 선택 ──────────────");
+      System.out.println(" 1. 세트 전체 상태 변경");
+      System.out.println(" 2. 낱개 개별 상태 변경 (시리얼번호 선택)");
+      System.out.println(" 0. 뒤로");
+      System.out.println("────────────────────────────────────");
+      System.out.print("선택: ");
+      int mode = readInt();
+
+      if (mode == 0) return;
+      if (mode == 2) {
+        updateEquipmentDetailStatusFlow(target);
+        return;
+      }
+      if (mode != 1) {
+        System.out.println("잘못된 입력입니다.");
+        return;
+      }
+    }
+
+    // 세트 전체 상태 변경 (기존 로직 그대로)
     System.out.println("새로운 상태 선택:");
     String status = selectStatus();
     if (status == null) return;
 
     String msg = service.updateEquipmentStatus(target.getEquipmentId(), status);
+    System.out.println(">> " + msg);
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 비품 낱개 개별 상태 수정 흐름
+  // ─────────────────────────────────────────────────────
+  private void updateEquipmentDetailStatusFlow(Equipment equipment) {
+    List<EquipmentDetail> details = service.getEquipmentDetails(equipment.getEquipmentId());
+
+    if (details.isEmpty()) {
+      System.out.println("등록된 낱개 정보가 없습니다.");
+      return;
+    }
+
+    System.out.println("\n── [" + equipment.getName() + "] 낱개 목록 ──────────────────");
+    System.out.printf("%-4s %-25s %-8s%n", "번호", "시리얼번호", "현재상태");
+    System.out.println("─".repeat(44));
+    for (int i = 0; i < details.size(); i++) {
+      EquipmentDetail d = details.get(i);
+      System.out.printf("%-4d %-25s %-8s%n", i + 1, d.getSerialNo(), d.getStatus());
+    }
+    System.out.println("─".repeat(44));
+
+    System.out.print("상태를 변경할 낱개 번호 선택 (0: 뒤로): ");
+    int index = readInt();
+    if (index == 0) return;
+    if (index < 1 || index > details.size()) {
+      System.out.println("잘못된 번호입니다.");
+      return;
+    }
+
+    EquipmentDetail target = details.get(index - 1);
+
+    System.out.println("[" + target.getSerialNo() + "] 새로운 상태 선택:");
+    String status = selectStatus();
+    if (status == null) return;
+
+    String msg = service.updateEquipmentDetailStatus(target.getEquipmentDetailId(), status);
     System.out.println(">> " + msg);
   }
 
