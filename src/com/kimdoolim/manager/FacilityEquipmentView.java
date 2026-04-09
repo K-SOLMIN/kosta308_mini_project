@@ -122,70 +122,90 @@ public class FacilityEquipmentView {
 
   // ─────────────────────────────────────────────────────
   // 시설 목록 출력
-  // 상위관리자 → 전체 / 중간관리자 → 본인 담당만
+  // 상위관리자 → 전체 + 담당자 표시
+  // 중간관리자 → 본인 담당만
   // ─────────────────────────────────────────────────────
   private void showFacilityList() {
     System.out.println("\n[시설 목록]");
 
-    List<Facility> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedFacilities()
-        : service.getAllFacilities();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+
+    List<Facility> list = isAdmin
+        ? service.getAllFacilities()
+        : service.getManagedFacilities();
 
     if (list.isEmpty()) {
       System.out.println("등록된 시설이 없습니다.");
       return;
     }
 
-    System.out.println("──────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-15s %-10s %-8s %-8s%n",
-        "번호", "시설명", "위치", "수용인원", "상태");
-    System.out.println("──────────────────────────────────────────────────────────────");
+    String div = isAdmin ? "─".repeat(78) : "─".repeat(62);
+    System.out.println(div);
+    if (isAdmin) {
+      System.out.printf("%-4s %-15s %-10s %-8s %-8s %-10s%n",
+          "번호", "시설명", "위치", "수용인원", "상태", "담당자");
+    } else {
+      System.out.printf("%-4s %-15s %-10s %-8s %-8s%n",
+          "번호", "시설명", "위치", "수용인원", "상태");
+    }
+    System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Facility f = list.get(i);
-      System.out.printf("%-4d %-15s %-10s %-8d %-8s%n",
-          i + 1,
-          f.getName(),
-          f.getLocation(),
-          f.getMaxCapacity(),
-          f.getStatus()
-      );
+      if (isAdmin) {
+        String managerName = (f.getUser() != null) ? f.getUser().getName() : "담당자 없음";
+        System.out.printf("%-4d %-15s %-10s %-8d %-8s %-10s%n",
+            i + 1, f.getName(), f.getLocation(), f.getMaxCapacity(), f.getStatus(), managerName);
+      } else {
+        System.out.printf("%-4d %-15s %-10s %-8d %-8s%n",
+            i + 1, f.getName(), f.getLocation(), f.getMaxCapacity(), f.getStatus());
+      }
     }
-    System.out.println("──────────────────────────────────────────────────────────────");
+    System.out.println(div);
   }
 
   // ─────────────────────────────────────────────────────
   // 비품 목록 출력
-  // 상위관리자 → 전체 / 중간관리자 → 본인 담당만
+  // 상위관리자 → 전체 + 담당자 표시
+  // 중간관리자 → 본인 담당만
   // ─────────────────────────────────────────────────────
   private void showEquipmentList() {
     System.out.println("\n[비품 목록]");
 
-    List<Equipment> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedEquipments()
-        : service.getAllEquipments();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+
+    List<Equipment> list = isAdmin
+        ? service.getAllEquipments()
+        : service.getManagedEquipments();
 
     if (list.isEmpty()) {
       System.out.println("등록된 비품이 없습니다.");
       return;
     }
 
-    System.out.println("──────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-15s %-10s %-15s %-8s%n",
-        "번호", "비품명", "위치", "시리얼번호", "상태");
-    System.out.println("──────────────────────────────────────────────────────────────");
+    String div = isAdmin ? "─".repeat(78) : "─".repeat(62);
+    System.out.println(div);
+    if (isAdmin) {
+      System.out.printf("%-4s %-15s %-10s %-15s %-8s %-10s%n",
+          "번호", "비품명", "위치", "시리얼번호", "상태", "담당자");
+    } else {
+      System.out.printf("%-4s %-15s %-10s %-15s %-8s%n",
+          "번호", "비품명", "위치", "시리얼번호", "상태");
+    }
+    System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Equipment e = list.get(i);
-      System.out.printf("%-4d %-15s %-10s %-15s %-8s%n",
-          i + 1,
-          e.getName(),
-          e.getLocation(),
-          e.getSerialNo(),
-          e.getStatus()
-      );
+      if (isAdmin) {
+        String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
+        System.out.printf("%-4d %-15s %-10s %-15s %-8s %-10s%n",
+            i + 1, e.getName(), e.getLocation(), e.getSerialNo(), e.getStatus(), managerName);
+      } else {
+        System.out.printf("%-4d %-15s %-10s %-15s %-8s%n",
+            i + 1, e.getName(), e.getLocation(), e.getSerialNo(), e.getStatus());
+      }
     }
-    System.out.println("──────────────────────────────────────────────────────────────");
+    System.out.println(div);
   }
 
   // ─────────────────────────────────────────────────────
@@ -286,9 +306,8 @@ public class FacilityEquipmentView {
 
     showFacilityList();
 
-    List<Facility> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedFacilities()
-        : service.getAllFacilities();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+    List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
     if (list.isEmpty()) return;
 
     System.out.print("수정할 시설 번호 선택 (0: 뒤로): ");
@@ -317,9 +336,8 @@ public class FacilityEquipmentView {
 
     showEquipmentList();
 
-    List<Equipment> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedEquipments()
-        : service.getAllEquipments();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+    List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
     if (list.isEmpty()) return;
 
     System.out.print("수정할 비품 번호 선택 (0: 뒤로): ");
@@ -348,9 +366,8 @@ public class FacilityEquipmentView {
 
     showFacilityList();
 
-    List<Facility> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedFacilities()
-        : service.getAllFacilities();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+    List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
     if (list.isEmpty()) return;
 
     System.out.print("삭제할 시설 번호 선택 (0: 뒤로): ");
@@ -383,9 +400,8 @@ public class FacilityEquipmentView {
 
     showEquipmentList();
 
-    List<Equipment> list = (Auth.getUserInfo().getPermission() == Permission.MIDDLEADMIN)
-        ? service.getManagedEquipments()
-        : service.getAllEquipments();
+    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
+    List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
     if (list.isEmpty()) return;
 
     System.out.print("삭제할 비품 번호 선택 (0: 뒤로): ");
