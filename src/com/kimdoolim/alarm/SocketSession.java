@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ClientManager extends Thread{
+public class SocketSession extends Thread{
     private Socket socket;
     private int socketUserId = -1; //서버소켓에 접속한 userId
     AlarmService alarmService = AlarmService.getAlarmService();
@@ -20,7 +20,7 @@ public class ClientManager extends Thread{
         return clientMap;
     }
 
-    public ClientManager(Socket socket) { this.socket = socket; }
+    public SocketSession(Socket socket) { this.socket = socket; }
 
     @Override
     public void run() {
@@ -41,14 +41,21 @@ public class ClientManager extends Thread{
                 if (line.startsWith("APPROVED_RESERVATION:")) {
                     // 스케줄 등록 요청
                     addApprovedSchedule(line);
-                } else if (line.contains(":")) {
-                    sendingAlarm(line);
                 } else if (line.startsWith("CANCEL:")) {
                     // 스케줄 취소
                     long resId = Long.parseLong(line.split(":", 2)[1]);
                     AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
                     System.out.println("❌ [스케줄 취소] 예약 ID: " + resId);
+                } else if (line.startsWith("USE_START:")) {
+                    String resIdStr = line.split(":")[1];
+                    long reservationId = Long.parseLong(resIdStr);
 
+                    System.out.println("🚀 [사용 시작] 예약 ID " + reservationId + " 연체 감지 스케줄 등록");
+
+                    // 연체 알림 전담 스케줄러 호출
+                    AlarmScheduler.getAlarmScheduler().scheduleOverdueAlarm(reservationId);
+                } else if (line.contains(":")) {
+                    sendingAlarm(line);
                 } else {
                     System.out.println("소켓으로 보내는 문자열에 이상이 있습니다..");
                 }

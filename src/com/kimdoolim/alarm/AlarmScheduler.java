@@ -94,6 +94,33 @@ public class AlarmScheduler {
         }
     }
 
+    public void scheduleOverdueAlarm(long reservationId) {
+        // 1. 해당 예약 정보 가져오기 (종료 시간 확인용)
+        Reservation res = alarmService.getReservationById(reservationId);
+        if (res == null) return;
+
+        // 2. 종료 시간 + 10분 계산
+        LocalDateTime overdueCheckTime = LocalDateTime.of(LocalDate.now(), res.getPeriod().getEndTime()).plusMinutes(10);
+        long delay = Duration.between(LocalDateTime.now(), overdueCheckTime).getSeconds();
+
+        if (delay < 0) delay = 3; // 이미 지난 경우 즉시(3초 뒤) 체크
+
+        // 3. 스케줄 등록
+        scheduler.schedule(() -> {
+            // [중요] 10분 뒤 시점에 다시 DB 조회 (반납 여부 확인)
+            boolean isReturned = alarmService.isAlreadyReturned(reservationId);
+
+            if (!isReturned) {
+                String message = "🔔 [연체 알림] 다음 사용자를 위해 빠른 반납 부탁드립니다.";
+                // 수신자에게 발송
+                alarmService.sendAndSaveAlarm(res.getUser().getUserId(), message, "OVERDUE");
+                System.out.println("🚨 [연체 발송] ID " + reservationId + " 유저에게 연체 경고 전송");
+            } else {
+                System.out.println("✅ [연체 제외] ID " + reservationId + " 정상 반납 확인됨");
+            }
+        }, delay, TimeUnit.SECONDS);
+    }
+
     private ScheduledFuture<?> scheduleTask(Reservation reservation, String type, LocalTime targetLocalTime) {
         LocalDateTime alarmTime = LocalDateTime.of(LocalDate.now(), targetLocalTime).minusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), alarmTime).getSeconds();

@@ -1,7 +1,7 @@
 package com.kimdoolim.main;
 
 import com.kimdoolim.alarm.AlarmScheduler;
-import com.kimdoolim.alarm.ClientManager;
+import com.kimdoolim.alarm.SocketSession;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -21,7 +21,7 @@ public class ServerMain {
                 while (true) {
                     Socket socket = serverSocket.accept();
                     // 클라이언트 접속 시 전담 스레드 생성
-                    new Thread(new ClientManager(socket)).start();
+                    new Thread(new SocketSession(socket)).start();
                 }
             } catch (IOException e) {
                 e.printStackTrace();

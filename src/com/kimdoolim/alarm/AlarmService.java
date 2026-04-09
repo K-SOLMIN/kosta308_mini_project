@@ -172,13 +172,36 @@ public class AlarmService {
         return list;
     }
 
+    /**
+     * 반납 여부 확인 (RETURN_REQUEST에 해당 예약 ID가 있고, 상태가 완료인지 확인)
+     * 선생님의 로직대로 STATUS가 FALSE인 경우 연체로 판단하도록 작성
+     */
+    public boolean isAlreadyReturned(long reservationId) {
+        // RETURN_REQUEST 테이블에서 해당 예약의 처리 상태를 조회
+        // (테이블 구조에 따라 쿼리는 조정하세요)
+        String sql = "SELECT COUNT(*) FROM return_request WHERE reservation_id = ? AND status = 'TRUE'";
+
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, reservationId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0; // 0보다 크면 이미 반납 처리된 것
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public void sendAndSaveAlarm(int receiverId, String content, String type) {
         // 1. DB 저장
         boolean isSaved = saveAlarmToDb(receiverId, content, type);
 
         if (isSaved) {
             // 2. 소켓 전송 - 해당 유저가 온라인이면 전송
-            PrintWriter receiverSocket = ClientManager.getClientMap().get(receiverId);
+            PrintWriter receiverSocket = SocketSession.getClientMap().get(receiverId);
             if (receiverSocket != null) {
                 receiverSocket.println(content);
                 System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
