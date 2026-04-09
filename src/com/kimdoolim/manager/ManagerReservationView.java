@@ -45,6 +45,7 @@ public class ManagerReservationView {
   // 중간 관리자 → 담당 시설/비품 대기 예약 목록만
   // ─────────────────────────────────────────────────────
   private void approveOrRejectFlow() {
+
     System.out.println("\n[예약 승인 / 반려]");
 
     List<Reservation> list = reservationService.getPendingReservations();
