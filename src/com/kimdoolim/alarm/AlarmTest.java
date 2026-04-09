@@ -16,6 +16,8 @@ public class AlarmTest {
     /**
      * 예약 등록 + 자동 승인 + [현재시간 + 11분]으로 알림 예약 호출
      */
+
+    //테스트용 임시예약요청 메소드
     public void registerAndApprove() {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -94,7 +96,7 @@ public class AlarmTest {
                 System.out.println("🔔 알림은 약 1분 뒤인 "
                     + testStartTime.minusMinutes(10) + "에 울릴 예정입니다.");
 
-                AlarmScheduler.getInstance().addReservationAlarm(approvedRes);
+                AlarmScheduler.getAlarmScheduler().addReservationAlarm(approvedRes);
             }
 
         } catch (SQLException e) {

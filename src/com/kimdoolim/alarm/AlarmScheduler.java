@@ -6,16 +6,17 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.*;
 
 public class AlarmScheduler {
     private static final AlarmScheduler alarmScheduler = new AlarmScheduler();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
     private final AlarmService alarmService = AlarmService.getAlarmService();
+    private final Map<Long, List<ScheduledFuture<?>>> scheduledTasks = new ConcurrentHashMap<>(); //key : reservationId
 
     private AlarmScheduler() {}
     public static AlarmScheduler getAlarmScheduler() { return alarmScheduler; }
@@ -53,14 +54,28 @@ public class AlarmScheduler {
     }
 
     /**
-     * 실시간 예약 승인 시 호출용 메서드
+     * 승인된 예약 scheduleTask메소드 호출해서 시작시간 반납시간 맞춰서 알림발송
      */
     public void addReservationAlarm(Reservation reservation) {
         if (reservation == null || !reservation.getReservationDate().equals(LocalDate.now())) return;
 
+        List<ScheduledFuture<?>> futures = new ArrayList<>();
         System.out.println("🆕 [실시간 등록] 당일 예약 감지: ID " + reservation.getReservationId());
-        scheduleTask(reservation, "START", reservation.getPeriod().getStartTime());
-        scheduleTask(reservation, "RETURN", reservation.getPeriod().getEndTime());
+        futures.add(scheduleTask(reservation, "사용안내", reservation.getPeriod().getStartTime()));
+        futures.add(scheduleTask(reservation, "반납안내", reservation.getPeriod().getEndTime()));
+
+        // 예약 ID로 task 저장
+        scheduledTasks.put(reservation.getReservationId(), futures);
+    }
+
+    public void cancelReservationAlarm(long reservationId) {
+        List<ScheduledFuture<?>> futures = scheduledTasks.remove(reservationId);
+        if (futures != null) {
+            futures.forEach(f -> f.cancel(false));
+            System.out.println("❌ [스케줄 취소 완료] 예약 ID: " + reservationId);
+        } else {
+            System.out.println("⚠️ [스케줄 취소 실패] 등록된 스케줄 없음 예약 ID: " + reservationId);
+        }
     }
 
     private void getTodayApprovedReservation() {
@@ -79,14 +94,17 @@ public class AlarmScheduler {
         }
     }
 
-    private void scheduleTask(Reservation reservation, String type, LocalTime targetLocalTime) {
+    private ScheduledFuture<?> scheduleTask(Reservation reservation, String type, LocalTime targetLocalTime) {
         LocalDateTime alarmTime = LocalDateTime.of(LocalDate.now(), targetLocalTime).minusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), alarmTime).getSeconds();
-
+        System.out.println("delay : " + delay);
         // 테스트 시 이미 지난 시간은 3초 뒤에 바로 실행되게 처리
-        if (delay < 0) delay = 3;
+        if (delay < 0) {
+            System.out.println("이미지난 시간임");
+            delay = 3;
+        }
 
-        scheduler.schedule(() -> {
+        return scheduler.schedule(() -> {
             String resourceName = "FACILITY".equals(reservation.getTargetType())
                     ? reservation.getFacility().getName()
                     : reservation.getEquipment().getName();

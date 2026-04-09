@@ -4,11 +4,10 @@ import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.PrintWriter;
+import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,46 +178,95 @@ public class AlarmService {
      * @param content    : 알림 메시지 내용
      * @param type       : 알림 타입 (START / RETURN)
      */
-    public void sendAndSaveAlarm(int receiverId, String content, String type) {
-        // 1. DB 저장 (ERD: alarm 테이블)
-        boolean isSaved = saveAlarmToDb(receiverId, content);
+//    public void sendAndSaveAlarm(int receiverId, String content, String type) {
+//        // 1. DB 저장 (ERD: alarm 테이블)
+//        boolean isSaved = insertAlarm(receiverId, content);
+//
+//        if (isSaved) {
+//            // 2. 실시간 소켓 전송 (선생님의 소켓 서버 로직 호출)
+//            // 예: SessionManager.getInstance().sendToUser(receiverId, content);
+//            System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
+//        } else {
+//            System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
+//        }
+//    }
 
-        if (isSaved) {
-            // 2. 실시간 소켓 전송 (선생님의 소켓 서버 로직 호출)
-            // 예: SessionManager.getInstance().sendToUser(receiverId, content);
-            System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
-        } else {
-            System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
+        public void sendAndSaveAlarm(int receiverId, String content, String type) {
+            // 1. DB 저장
+            boolean isSaved = saveAlarmToDb(receiverId, content, type);
+
+            if (isSaved) {
+                // 2. 소켓 전송 - 해당 유저가 온라인이면 전송
+                PrintWriter receiverSocket = ClientManager.getClientMap().get(receiverId);
+                if (receiverSocket != null) {
+                    receiverSocket.println(receiverId + ":" + content);
+                    System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
+                } else {
+                    System.out.println("⚠️ [오프라인] User " + receiverId + "은 오프라인입니다. DB에만 저장됨");
+                }
+            } else {
+                System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
+            }
         }
-    }
 
     /**
      * 알림 데이터를 DB에 Insert (ERD 컬럼명 준수)
      */
-    private boolean saveAlarmToDb(int receiverId, String content) {
-        Connection conn = mysql.getConnection();
-        PreparedStatement pstmt = null;
+//    private boolean insertAlarm(int receiverId, String content) {
+//        Connection conn = mysql.getConnection();
+//        PreparedStatement pstmt = null;
+//
+//        // ERD 기준: receiver_id, content, generate_date, is_read
+//        String sql = "INSERT INTO alarm (receiver_id, content, generate_date, isread, type) " +
+//                "VALUES (?, ?, NOW(), 'false', '[testType]')";
+//
+//        try {
+//            pstmt = conn.prepareStatement(sql);
+//            pstmt.setInt(1, receiverId);
+//            pstmt.setString(2, content);
+//
+//            int result = pstmt.executeUpdate();
+//            conn.commit();
+//            return result > 0;
+//        } catch (SQLException e) {
+//            mysql.rollback(conn);
+//            e.printStackTrace();
+//            return false;
+//        } finally {
+//            mysql.close(pstmt);
+//            mysql.close(conn);
+//        }
+//    }
 
-        // ERD 기준: receiver_id, content, generate_date, is_read
-        String sql = "INSERT INTO alarm (receiver_id, content, generate_date, isread, type) " +
-                "VALUES (?, ?, NOW(), 'false', '[testType]')";
+    private boolean saveAlarmToDb(int receiverId, String content, String type) {
+        PreparedStatement pstmt = null;
+        Connection conn = mysql.getConnection();
+        boolean result = false;
+
+        String sql = "INSERT INTO alarm (receiver_id, type, generate_date, content, isread) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, receiverId);
-            pstmt.setString(2, content);
+            pstmt.setString(2, type);
+            pstmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            pstmt.setString(4, content);
+            pstmt.setBoolean(5, false);
 
-            int result = pstmt.executeUpdate();
-            conn.commit();
-            return result > 0;
+            pstmt.executeUpdate();
+            mysql.commit(conn);
+            result = true;
+
         } catch (SQLException e) {
             mysql.rollback(conn);
-            e.printStackTrace();
-            return false;
+            System.out.println(">> 알림 저장 실패: " + e.getMessage());
         } finally {
             mysql.close(pstmt);
             mysql.close(conn);
         }
+
+        return result;
     }
 
     public Reservation getReservationById(long reservationId) {

@@ -15,6 +15,11 @@ public class ClientManager extends Thread{
     AlarmService alarmService = AlarmService.getAlarmService();
     private static final Map<Integer, PrintWriter> clientMap = new ConcurrentHashMap<>();
 
+
+    public static Map<Integer, PrintWriter> getClientMap() {
+        return clientMap;
+    }
+
     public ClientManager(Socket socket) { this.socket = socket; }
 
     @Override
@@ -38,6 +43,12 @@ public class ClientManager extends Thread{
                     addApprovedSchedule(line);
                 } else if (line.contains(":")) {
                     sendingAlarm(line);
+                } else if (line.startsWith("CANCEL:")) {
+                    // 스케줄 취소
+                    long resId = Long.parseLong(line.split(":", 2)[1]);
+                    AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
+                    System.out.println("❌ [스케줄 취소] 예약 ID: " + resId);
+
                 } else {
                     System.out.println("소켓으로 보내는 문자열에 이상이 있습니다..");
                 }
@@ -67,7 +78,6 @@ public class ClientManager extends Thread{
         String reservationId = line.split(":", 2)[1];
         long resId = Long.parseLong(reservationId);
 
-        // AlarmService로 예약 조회
         Reservation reservation = alarmService.getReservationById(resId);
         if (reservation != null) {
             AlarmScheduler.getAlarmScheduler().addReservationAlarm(reservation);
