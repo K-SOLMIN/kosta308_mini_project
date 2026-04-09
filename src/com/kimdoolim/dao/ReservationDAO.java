@@ -267,6 +267,8 @@ public class ReservationDAO {
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.user_id = ? AND r.status = '승인' " +
+        "AND (r.reservation_date < CURDATE() " +
+        "     OR (r.reservation_date = CURDATE() AND p.start_time <= CURTIME())) " +
         "ORDER BY r.reservation_date ASC";
 
     try {
@@ -336,7 +338,7 @@ public class ReservationDAO {
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.status = " + status + " " +
         managerCondition +
-        "ORDER BY r.reservation_date DESC, r.created_at DESC";
+        "ORDER BY r.created_at ASC";
 
     try {
       pstmt = conn.prepareStatement(sql);
