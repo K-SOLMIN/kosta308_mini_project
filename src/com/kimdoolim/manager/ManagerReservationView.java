@@ -146,10 +146,10 @@ public class ManagerReservationView {
   // 예약 목록 출력 (예약자 이름 포함)
   // ─────────────────────────────────────────────────────
   private void printReservationList(List<Reservation> list) {
-    System.out.println("──────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-8s %-12s %-8s %-6s %-15s %-6s%n",
-        "번호", "예약자", "예약날짜", "교시", "구분", "시설/비품명", "상태");
-    System.out.println("──────────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────────────────────");
+    System.out.printf("%-4s %-8s %-14s %-12s %-8s %-6s %-15s %-6s%n",
+        "번호", "예약자", "신청시간", "예약날짜", "교시", "구분", "시설/비품명", "상태");
+    System.out.println("──────────────────────────────────────────────────────────────────────────");
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -157,9 +157,14 @@ public class ManagerReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
-      System.out.printf("%-4d %-8s %-12s %-8s %-6s %-15s %-6s%n",
+      String createdAtStr = r.getCreatedAt() != null
+          ? r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm"))
+          : "-";
+
+      System.out.printf("%-4d %-8s %-14s %-12s %-8s %-6s %-15s %-6s%n",
           i + 1,
           r.getUser().getName(),
+          createdAtStr,
           r.getReservationDate().toString(),
           r.getPeriod().getPeriodName(),
           r.getTargetType().equals("FACILITY") ? "시설" : "비품",
@@ -167,7 +172,7 @@ public class ManagerReservationView {
           r.getStatus()
       );
     }
-    System.out.println("──────────────────────────────────────────────────────────────");
+    System.out.println("──────────────────────────────────────────────────────────────────────────");
   }
 
   // ─────────────────────────────────────────────────────
