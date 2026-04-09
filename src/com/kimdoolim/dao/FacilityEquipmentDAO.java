@@ -76,7 +76,11 @@ public class FacilityEquipmentDAO {
     String sql = "SELECT e.equipment_id, e.manager_id, e.name, e.location, e.serial_no, " +
         "       e.status, u.name AS manager_name, " +
         "       (SELECT COUNT(*) FROM equipmentdetail ed " +
-        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count " +
+        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count, " +
+        "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
+        "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
+        "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
+        "       ) AS status_summary " +
         "FROM equipment e " +
         "LEFT JOIN user u ON e.manager_id = u.user_id " +
         "WHERE e.check_delete = 'false' " +
@@ -102,6 +106,7 @@ public class FacilityEquipmentDAO {
             .status(rs.getString("status"))
             .user(manager)
             .quantity(rs.getInt("item_count"))
+            .statusSummary(rs.getString("status_summary"))
             .build());
       }
     } catch (SQLException e) {
@@ -444,7 +449,11 @@ public class FacilityEquipmentDAO {
 
     String sql = "SELECT e.equipment_id, e.name, e.location, e.serial_no, e.status, " +
         "       (SELECT COUNT(*) FROM equipmentdetail ed " +
-        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count " +
+        "        WHERE ed.equipment_id = e.equipment_id AND ed.check_delete = 'false') AS item_count, " +
+        "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
+        "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
+        "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
+        "       ) AS status_summary " +
         "FROM equipment e " +
         "WHERE e.check_delete = 'false' AND e.manager_id = ? " +
         "ORDER BY e.equipment_id";
@@ -461,6 +470,7 @@ public class FacilityEquipmentDAO {
             .serialNo(rs.getString("serial_no"))
             .status(rs.getString("status"))
             .quantity(rs.getInt("item_count"))
+            .statusSummary(rs.getString("status_summary"))
             .build());
       }
     } catch (SQLException e) {
@@ -567,5 +577,82 @@ public class FacilityEquipmentDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 15. 비품 낱개(equipmentdetail) 목록 조회
+  // ─────────────────────────────────────────────────────
+  public List<EquipmentDetail> findEquipmentDetails(long equipmentId) {
+    List<EquipmentDetail> list = new ArrayList<>();
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    String sql = "SELECT equipment_detail_id, equipment_id, serial_no, status " +
+        "FROM equipmentdetail " +
+        "WHERE equipment_id = ? AND check_delete = 'false' " +
+        "ORDER BY serial_no";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      pstmt.setLong(1, equipmentId);
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        list.add(EquipmentDetail.builder()
+            .equipmentDetailId(rs.getLong("equipment_detail_id"))
+            .equipmentId(rs.getLong("equipment_id"))
+            .serialNo(rs.getString("serial_no"))
+            .status(rs.getString("status"))
+            .build());
+      }
+    } catch (SQLException e) {
+      System.out.println("비품 낱개 목록 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 16. 비품 낱개(equipmentdetail) 상태 수정
+  // ─────────────────────────────────────────────────────
+  public int updateEquipmentDetailStatus(long equipmentDetailId, String status) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+    int result = 0;
+
+    String lockSql   = "SELECT equipment_detail_id FROM equipmentdetail WHERE equipment_detail_id = ? FOR UPDATE";
+    String updateSql = "UPDATE equipmentdetail SET status = ? WHERE equipment_detail_id = ?";
+
+    try {
+      pstmt = conn.prepareStatement(lockSql);
+      pstmt.setLong(1, equipmentDetailId);
+      rs = pstmt.executeQuery();
+
+      if (!rs.next()) {
+        System.out.println("낱개 비품을 찾을 수 없습니다. (equipment_detail_id=" + equipmentDetailId + ")");
+        db.rollback(conn);
+        return 0;
+      }
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      pstmt = conn.prepareStatement(updateSql);
+      pstmt.setString(1, status);
+      pstmt.setLong(2, equipmentDetailId);
+      result = pstmt.executeUpdate();
+      db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      if (e.getErrorCode() == 1205) {
+        System.out.println("낱개 상태 수정 실패: 다른 관리자가 수정 중입니다. 잠시 후 다시 시도해주세요.");
+      } else {
+        System.out.println("낱개 상태 수정 실패: " + e.getMessage());
+      }
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return result;
   }
 }

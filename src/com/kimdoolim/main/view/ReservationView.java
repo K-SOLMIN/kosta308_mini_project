@@ -444,8 +444,10 @@ public class ReservationView {
     System.out.println("\n── 비품 선택 ──────────────────────");
     for (int i = 0; i < equipments.size(); i++) {
       Equipment e = equipments.get(i);
-      System.out.printf(" %d. %s  [위치: %s]%n",
-          i + 1, e.getName(), e.getLocation());
+      String summary = (e.getStatusSummary() != null && !e.getStatusSummary().isEmpty())
+          ? "  [낱개: " + e.getStatusSummary() + "]" : "";
+      System.out.printf(" %d. %s  [위치: %s]%s%n",
+          i + 1, e.getName(), e.getLocation(), summary);
     }
     System.out.println(" 0. 뒤로");
     System.out.print("비품 선택: ");

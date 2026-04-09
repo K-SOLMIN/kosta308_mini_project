@@ -87,8 +87,12 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT equipment_id, name, location, status " +
-        "FROM equipment WHERE check_delete = 'false' AND status = '정상'";
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.status, " +
+        "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
+        "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
+        "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
+        "       ) AS status_summary " +
+        "FROM equipment e WHERE e.check_delete = 'false' AND e.status = '정상'";
 
     try {
       pstmt = conn.prepareStatement(sql);
@@ -99,6 +103,7 @@ public class ReservationDAO {
             .name(rs.getString("name"))
             .location(rs.getString("location"))
             .status(rs.getString("status"))
+            .statusSummary(rs.getString("status_summary"))
             .build());
       }
     } catch (SQLException e) {
