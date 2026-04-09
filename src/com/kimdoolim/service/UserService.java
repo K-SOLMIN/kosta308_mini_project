@@ -1,6 +1,7 @@
 package com.kimdoolim.service;
 
 import com.kimdoolim.common.Auth;
+import com.kimdoolim.dao.FacilityEquipmentDAO;
 import com.kimdoolim.dao.UserDAO;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
@@ -10,6 +11,7 @@ import java.util.List;
 public class UserService {
 
   private final UserDAO userDAO = new UserDAO();
+  private final FacilityEquipmentDAO facilityEquipmentDAO = new FacilityEquipmentDAO();
 
   // ─────────────────────────────────────────────────────
   // 1. 전체 사용자 목록
@@ -19,7 +21,14 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 2. 사용자 등록
+  // 2. 중간관리자 목록 (담당자 재배정 시 사용)
+  // ─────────────────────────────────────────────────────
+  public List<User> getMiddleAdmins() {
+    return userDAO.findMiddleAdmins();
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 3. 사용자 등록
   // ─────────────────────────────────────────────────────
   public String registerUser(User user) {
     if (userDAO.isIdDuplicate(user.getId())) {
@@ -30,15 +39,20 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 3. 휴직 처리 (관리자가 직접 관리)
+  // 4. 휴직 처리 → 담당 시설/비품 담당자 없음으로 변경
   // ─────────────────────────────────────────────────────
   public String setLeaveOfAbsence(int userId) {
     int result = userDAO.setLeaveOfAbsence(userId);
-    return result > 0 ? "휴직 처리되었습니다." : "처리 중 오류가 발생했습니다.";
+    if (result > 0) {
+      facilityEquipmentDAO.clearManagerFromFacilities(userId);
+      facilityEquipmentDAO.clearManagerFromEquipments(userId);
+      return "휴직 처리되었습니다. 담당 시설/비품이 담당자 없음으로 변경되었습니다.";
+    }
+    return "처리 중 오류가 발생했습니다.";
   }
 
   // ─────────────────────────────────────────────────────
-  // 4. 복직 처리 (휴직 → 활성)
+  // 5. 복직 처리 (휴직 → 활성)
   // ─────────────────────────────────────────────────────
   public String restoreFromLeave(int userId) {
     int result = userDAO.restoreFromLeave(userId);
@@ -46,16 +60,20 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 5. 전근 처리 (비활성화 → 새 학교 관리자 승인 필요)
+  // 6. 전근 처리 → 담당 시설/비품 담당자 없음으로 변경
   // ─────────────────────────────────────────────────────
   public String setTransfer(int userId) {
     int result = userDAO.setTransfer(userId);
-    return result > 0 ? "전근 처리되었습니다. 해당 사용자는 새 학교 관리자 승인 후 사용 가능합니다."
-        : "처리 중 오류가 발생했습니다.";
+    if (result > 0) {
+      facilityEquipmentDAO.clearManagerFromFacilities(userId);
+      facilityEquipmentDAO.clearManagerFromEquipments(userId);
+      return "전근 처리되었습니다. 담당 시설/비품이 담당자 없음으로 변경되었습니다.";
+    }
+    return "처리 중 오류가 발생했습니다.";
   }
 
   // ─────────────────────────────────────────────────────
-  // 6. 전근 승인 (새 학교 관리자가 승인)
+  // 7. 전근 승인 (새 학교 관리자가 승인)
   // ─────────────────────────────────────────────────────
   public String approveTransfer(int userId) {
     int result = userDAO.approveTransfer(userId);
@@ -64,7 +82,7 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 4. 권한 변경 (USER ↔ MIDDLEADMIN)
+  // 8. 권한 변경 (USER ↔ MIDDLEADMIN)
   // ─────────────────────────────────────────────────────
   public String togglePermission(int userId, Permission currentPermission) {
     Permission newPermission = (currentPermission == Permission.USER)
@@ -78,7 +96,7 @@ public class UserService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 5. 비밀번호 변경 (본인)
+  // 9. 비밀번호 변경 (본인)
   // ─────────────────────────────────────────────────────
   public String changePassword(String currentPwd, String newPwd, String confirmPwd) {
     User loginUser = Auth.getUserInfo();

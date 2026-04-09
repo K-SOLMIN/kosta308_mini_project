@@ -13,21 +13,37 @@ public class FacilityEquipmentService {
   private final FacilityEquipmentDAO facilityEquipmentDAO = new FacilityEquipmentDAO();
 
   // ─────────────────────────────────────────────────────
-  // 1. 전체 시설 목록
+  // 1. 전체 시설 목록 (상위관리자용)
   // ─────────────────────────────────────────────────────
   public List<Facility> getAllFacilities() {
     return facilityEquipmentDAO.findAllFacilities();
   }
 
   // ─────────────────────────────────────────────────────
-  // 2. 전체 비품 목록
+  // 2. 전체 비품 목록 (상위관리자용)
   // ─────────────────────────────────────────────────────
   public List<Equipment> getAllEquipments() {
     return facilityEquipmentDAO.findAllEquipments();
   }
 
   // ─────────────────────────────────────────────────────
-  // 3. 시설 등록
+  // 3. 중간관리자 담당 시설 목록
+  // ─────────────────────────────────────────────────────
+  public List<Facility> getManagedFacilities() {
+    User loginUser = Auth.getUserInfo();
+    return facilityEquipmentDAO.findFacilitiesByManagerId(loginUser.getUserId());
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 4. 중간관리자 담당 비품 목록
+  // ─────────────────────────────────────────────────────
+  public List<Equipment> getManagedEquipments() {
+    User loginUser = Auth.getUserInfo();
+    return facilityEquipmentDAO.findEquipmentsByManagerId(loginUser.getUserId());
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 5. 시설 등록
   //    → 담당자는 현재 로그인한 관리자로 자동 설정
   // ─────────────────────────────────────────────────────
   public String registerFacility(Facility facility) {
@@ -37,7 +53,7 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 4. 비품 등록
+  // 6. 비품 등록
   //    → 담당자는 현재 로그인한 관리자로 자동 설정
   // ─────────────────────────────────────────────────────
   public String registerEquipment(Equipment equipment) {
@@ -47,7 +63,7 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 5. 시설 상태 수정
+  // 7. 시설 상태 수정
   // ─────────────────────────────────────────────────────
   public String updateFacilityStatus(long facilityId, String status) {
     int result = facilityEquipmentDAO.updateFacilityStatus(facilityId, status);
@@ -55,7 +71,7 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 6. 비품 상태 수정
+  // 8. 비품 상태 수정
   // ─────────────────────────────────────────────────────
   public String updateEquipmentStatus(long equipmentId, String status) {
     int result = facilityEquipmentDAO.updateEquipmentStatus(equipmentId, status);
@@ -63,7 +79,7 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 7. 시설 삭제
+  // 9. 시설 삭제
   // ─────────────────────────────────────────────────────
   public String deleteFacility(long facilityId) {
     int result = facilityEquipmentDAO.deleteFacility(facilityId);
@@ -71,10 +87,26 @@ public class FacilityEquipmentService {
   }
 
   // ─────────────────────────────────────────────────────
-  // 8. 비품 삭제
+  // 10. 비품 삭제
   // ─────────────────────────────────────────────────────
   public String deleteEquipment(long equipmentId) {
     int result = facilityEquipmentDAO.deleteEquipment(equipmentId);
     return result > 0 ? "비품이 삭제되었습니다." : "삭제 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 11. 시설 담당자 재배정 (null이면 담당자 없음)
+  // ─────────────────────────────────────────────────────
+  public String updateFacilityManager(long facilityId, Integer managerId) {
+    int result = facilityEquipmentDAO.updateFacilityManager(facilityId, managerId);
+    return result > 0 ? "담당자가 변경되었습니다." : "변경 중 오류가 발생했습니다.";
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 12. 비품 담당자 재배정 (null이면 담당자 없음)
+  // ─────────────────────────────────────────────────────
+  public String updateEquipmentManager(long equipmentId, Integer managerId) {
+    int result = facilityEquipmentDAO.updateEquipmentManager(equipmentId, managerId);
+    return result > 0 ? "담당자가 변경되었습니다." : "변경 중 오류가 발생했습니다.";
   }
 }

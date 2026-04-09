@@ -423,7 +423,6 @@ public class ReservationDAO {
     String updateSql = "UPDATE reservation SET status = '반납완료' WHERE reservation_id = ?";
 
     try {
-
       pstmt = conn.prepareStatement(insertSql);
       pstmt.setLong(1, reservationId);
       pstmt.setString(2, condition);
@@ -435,9 +434,9 @@ public class ReservationDAO {
       pstmt.setLong(1, reservationId);
       result = pstmt.executeUpdate();
 
-      db.commit(conn);  // 둘 다 성공했을 때만 커밋
+      db.commit(conn);
     } catch (SQLException e) {
-      db.rollback(conn);  // 하나라도 실패하면 둘 다 롤백
+      db.rollback(conn);
       System.out.println("반납 처리 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
@@ -556,10 +555,23 @@ public class ReservationDAO {
           .facility(facility)
           .equipment(equipment)
           .user(user)
-          .returnedAt(rs.getTimestamp("returned_at") != null
+          .returnedAt(hasColumn(rs, "returned_at") && rs.getTimestamp("returned_at") != null
               ? rs.getTimestamp("returned_at").toLocalDateTime() : null)
           .build());
     }
     return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // ResultSet에 해당 컬럼이 존재하는지 확인하는 헬퍼
+  // returned_at 처럼 일부 쿼리에만 있는 컬럼 안전하게 읽기 위함
+  // ─────────────────────────────────────────────────────
+  private boolean hasColumn(ResultSet rs, String columnName) {
+    try {
+      rs.findColumn(columnName);
+      return true;
+    } catch (SQLException e) {
+      return false;
+    }
   }
 }

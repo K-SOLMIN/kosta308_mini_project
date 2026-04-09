@@ -16,7 +16,7 @@ public class FacilityEquipmentDAO {
   private final Database db = MySql.getMySql();
 
   // ─────────────────────────────────────────────────────
-  // 1. 전체 시설 목록 조회
+  // 1. 전체 시설 목록 조회 (상위관리자용 - 담당자 없는 것 포함 전체)
   // ─────────────────────────────────────────────────────
   public List<Facility> findAllFacilities() {
     List<Facility> list = new ArrayList<>();
@@ -24,11 +24,11 @@ public class FacilityEquipmentDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT f.facility_id, f.location, f.name, f.max_capacity, " +
+    String sql = "SELECT f.facility_id, f.manager_id, f.location, f.name, f.max_capacity, " +
         "       f.max_reservation_unit, f.max_reservation_value, " +
         "       f.is_delete, f.status, u.name AS manager_name " +
         "FROM facility f " +
-        "JOIN user u ON f.manager_id = u.user_id " +
+        "LEFT JOIN user u ON f.manager_id = u.user_id " +
         "WHERE f.is_delete = 'false' " +
         "ORDER BY f.facility_id";
 
@@ -37,9 +37,12 @@ public class FacilityEquipmentDAO {
       rs = pstmt.executeQuery();
 
       while (rs.next()) {
-        User manager = User.builder()
-            .name(rs.getString("manager_name"))
-            .build();
+        User manager = null;
+        if (rs.getString("manager_name") != null) {
+          manager = User.builder()
+              .name(rs.getString("manager_name"))
+              .build();
+        }
 
         list.add(Facility.builder()
             .facilityId(rs.getLong("facility_id"))
@@ -61,7 +64,7 @@ public class FacilityEquipmentDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 2. 전체 비품 목록 조회
+  // 2. 전체 비품 목록 조회 (상위관리자용 - 담당자 없는 것 포함 전체)
   // ─────────────────────────────────────────────────────
   public List<Equipment> findAllEquipments() {
     List<Equipment> list = new ArrayList<>();
@@ -69,10 +72,10 @@ public class FacilityEquipmentDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT e.equipment_id, e.name, e.location, e.serial_no, " +
+    String sql = "SELECT e.equipment_id, e.manager_id, e.name, e.location, e.serial_no, " +
         "       e.status, u.name AS manager_name " +
         "FROM equipment e " +
-        "JOIN user u ON e.manager_id = u.user_id " +
+        "LEFT JOIN user u ON e.manager_id = u.user_id " +
         "WHERE e.check_delete = 'false' " +
         "ORDER BY e.equipment_id";
 
@@ -81,9 +84,12 @@ public class FacilityEquipmentDAO {
       rs = pstmt.executeQuery();
 
       while (rs.next()) {
-        User manager = User.builder()
-            .name(rs.getString("manager_name"))
-            .build();
+        User manager = null;
+        if (rs.getString("manager_name") != null) {
+          manager = User.builder()
+              .name(rs.getString("manager_name"))
+              .build();
+        }
 
         list.add(Equipment.builder()
             .equipmentId(rs.getLong("equipment_id"))
@@ -167,9 +173,6 @@ public class FacilityEquipmentDAO {
 
   // ─────────────────────────────────────────────────────
   // 5. 시설 상태 수정
-  //    SELECT FOR UPDATE로 행을 잠근 뒤 수정
-  //    → 다른 트랜잭션이 같은 행을 잠그려 하면 대기하거나
-  //      이미 잠겨있으면 "다른 관리자가 수정 중" 안내 후 롤백
   // ─────────────────────────────────────────────────────
   public int updateFacilityStatus(long facilityId, String status) {
     Connection conn = db.getConnection();
@@ -181,7 +184,6 @@ public class FacilityEquipmentDAO {
     String updateSql = "UPDATE facility SET status = ? WHERE facility_id = ?";
 
     try {
-      // 행 잠금 (다른 트랜잭션이 이미 잠갔으면 여기서 대기 → 타임아웃 시 예외)
       pstmt = conn.prepareStatement(lockSql);
       pstmt.setLong(1, facilityId);
       rs = pstmt.executeQuery();
@@ -197,10 +199,9 @@ public class FacilityEquipmentDAO {
       pstmt.setString(1, status);
       pstmt.setLong(2, facilityId);
       result = pstmt.executeUpdate();
-      db.commit(conn);  // 커밋 시 잠금 해제
+      db.commit(conn);
     } catch (SQLException e) {
       db.rollback(conn);
-      // 락 타임아웃 (ER_LOCK_WAIT_TIMEOUT = 1205)
       if (e.getErrorCode() == 1205) {
         System.out.println("시설 상태 수정 실패: 다른 관리자가 수정 중입니다. 잠시 후 다시 시도해주세요.");
       } else {
@@ -336,5 +337,176 @@ public class FacilityEquipmentDAO {
       db.close(rs); db.close(pstmt); db.close(conn);
     }
     return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 9. 중간관리자 담당 시설 목록 조회
+  // ─────────────────────────────────────────────────────
+  public List<Facility> findFacilitiesByManagerId(int managerId) {
+    List<Facility> list = new ArrayList<>();
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    String sql = "SELECT f.facility_id, f.location, f.name, f.max_capacity, " +
+        "       f.max_reservation_unit, f.max_reservation_value, f.status " +
+        "FROM facility f " +
+        "WHERE f.is_delete = 'false' AND f.manager_id = ? " +
+        "ORDER BY f.facility_id";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      pstmt.setInt(1, managerId);
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        list.add(Facility.builder()
+            .facilityId(rs.getLong("facility_id"))
+            .location(rs.getString("location"))
+            .name(rs.getString("name"))
+            .maxCapacity(rs.getInt("max_capacity"))
+            .maxReservationUnit(rs.getString("max_reservation_unit"))
+            .maxReservationValue(rs.getInt("max_reservation_value"))
+            .status(rs.getString("status"))
+            .build());
+      }
+    } catch (SQLException e) {
+      System.out.println("담당 시설 목록 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 10. 중간관리자 담당 비품 목록 조회
+  // ─────────────────────────────────────────────────────
+  public List<Equipment> findEquipmentsByManagerId(int managerId) {
+    List<Equipment> list = new ArrayList<>();
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.serial_no, e.status " +
+        "FROM equipment e " +
+        "WHERE e.check_delete = 'false' AND e.manager_id = ? " +
+        "ORDER BY e.equipment_id";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      pstmt.setInt(1, managerId);
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        list.add(Equipment.builder()
+            .equipmentId(rs.getLong("equipment_id"))
+            .name(rs.getString("name"))
+            .location(rs.getString("location"))
+            .serialNo(rs.getString("serial_no"))
+            .status(rs.getString("status"))
+            .build());
+      }
+    } catch (SQLException e) {
+      System.out.println("담당 비품 목록 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 11. 시설 담당자 변경 (재배정 / 담당자 없음 처리)
+  //     managerId = null → 담당자 없음
+  //     managerId = 값   → 해당 관리자로 재배정
+  // ─────────────────────────────────────────────────────
+  public int updateFacilityManager(long facilityId, Integer managerId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    int result = 0;
+
+    String sql = "UPDATE facility SET manager_id = ? WHERE facility_id = ?";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      if (managerId != null) pstmt.setInt(1, managerId);
+      else pstmt.setNull(1, Types.INTEGER);
+      pstmt.setLong(2, facilityId);
+      result = pstmt.executeUpdate();
+      db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("시설 담당자 변경 실패: " + e.getMessage());
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 12. 비품 담당자 변경 (재배정 / 담당자 없음 처리)
+  // ─────────────────────────────────────────────────────
+  public int updateEquipmentManager(long equipmentId, Integer managerId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    int result = 0;
+
+    String sql = "UPDATE equipment SET manager_id = ? WHERE equipment_id = ?";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      if (managerId != null) pstmt.setInt(1, managerId);
+      else pstmt.setNull(1, Types.INTEGER);
+      pstmt.setLong(2, equipmentId);
+      result = pstmt.executeUpdate();
+      db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("비품 담당자 변경 실패: " + e.getMessage());
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 13. 특정 관리자의 모든 시설 담당자 NULL 처리
+  //     (휴직/전근 시 호출)
+  // ─────────────────────────────────────────────────────
+  public int clearManagerFromFacilities(int managerId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    try {
+      pstmt = conn.prepareStatement("UPDATE facility SET manager_id = NULL WHERE manager_id = ?");
+      pstmt.setInt(1, managerId);
+      int result = pstmt.executeUpdate();
+      db.commit(conn);
+      return result;
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("시설 담당자 초기화 실패: " + e.getMessage());
+      return 0;
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 14. 특정 관리자의 모든 비품 담당자 NULL 처리
+  //     (휴직/전근 시 호출)
+  // ─────────────────────────────────────────────────────
+  public int clearManagerFromEquipments(int managerId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    try {
+      pstmt = conn.prepareStatement("UPDATE equipment SET manager_id = NULL WHERE manager_id = ?");
+      pstmt.setInt(1, managerId);
+      int result = pstmt.executeUpdate();
+      db.commit(conn);
+      return result;
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("비품 담당자 초기화 실패: " + e.getMessage());
+      return 0;
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
   }
 }
