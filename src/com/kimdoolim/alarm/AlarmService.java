@@ -235,7 +235,7 @@ public class AlarmService {
         }
     }
 
-    private boolean saveAlarmToDb(int receiverId, String content, String type) {
+    public boolean saveAlarmToDb(int receiverId, String content, String type) {
         PreparedStatement pstmt = null;
         Connection conn = mysql.getConnection();
         boolean result = false;

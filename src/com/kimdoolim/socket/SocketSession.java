@@ -41,8 +41,9 @@ public class SocketSession extends Thread{
             //
             String line;
             while ((line = in.readLine()) != null) {
-                System.out.println("socketReadLine" + line);
+                System.out.println("socketReadLine : " + line);
                 if (line.startsWith("RESERVATION_RESULT:")) {
+                    //관리자 예약요청의 결과에따라 알림내용이 달라짐
                     // 규격 예시: RESERVATION_RESULT:74:APPROVE (승인) 또는 RESERVATION_RESULT:74:REJECT (반려)
                     String[] parts = line.split(":");
                     long resId = Long.parseLong(parts[1]);
@@ -50,7 +51,7 @@ public class SocketSession extends Thread{
 
                     processReservationResult(resId, status);
                 } else if (line.startsWith("REQUEST_RESERVATION")) {
-                    FacilityEquipmentRequestAlarm(line);
+                    facilityEquipmentRequestAlarm(line);
                 } else if (line.startsWith("CANCEL:")) {
                     // 1. 예약 ID 추출
                     long resId = Long.parseLong(line.split(":", 2)[1]);
@@ -125,58 +126,86 @@ public class SocketSession extends Thread{
 //        }
 //    }
 
-    private void FacilityEquipmentRequestAlarm(String line) {
+//    private void FacilityEquipmentRequestAlarm(String line) {
+//        long resId = Long.parseLong(line.split(":")[1]);
+//
+//        // 1. 해당 예약의 담당 매니저 ID 조회
+//        int managerId = alarmService.getManagerIdByReservationId(resId);
+//        Reservation reservation = alarmService.getReservationById(resId);
+//
+//        if (managerId != -1) {
+//            // 2. 매니저의 출력 스트림(PrintWriter) 가져오기
+//            PrintWriter managerOut = clientMap.get(managerId);
+//
+//            // 16진수 이모지: 📩 (0x1F4E9)
+//            String msg = "\ud83d\udce9 [예약요청] " + reservation.getFacility().getName() + " 새로운 예약 신청이 들어왔습니다.";
+//
+//            if (managerOut != null) {
+//                managerOut.println(msg);
+//                System.out.println("📧 [매니저 알림] 예약 " + resId + " -> 매니저 " + managerId + "에게 전송");
+//            } else {
+//                // 매니저가 오프라인일 때 DB에 저장하는 로직이 있다면 여기 추가
+//                alarmService.sendAndSaveAlarm(managerId, msg, "[요청]");
+//                System.out.println("⚠️ [매니저 부재] 매니저 " + managerId + " 오프라인. DB 저장됨.");
+//            }
+//        } else {
+//            System.out.println("❌ [알림 실패] 예약 " + resId + "의 매니저 정보를 찾을 수 없습니다.");
+//        }
+//    }
+
+    private void facilityEquipmentRequestAlarm(String line) {
         long resId = Long.parseLong(line.split(":")[1]);
 
-        // 1. 해당 예약의 담당 매니저 ID 조회
+// 1. 해당 예약의 담당 매니저 ID 및 상세 정보 조회
         int managerId = alarmService.getManagerIdByReservationId(resId);
         Reservation reservation = alarmService.getReservationById(resId);
 
-        if (managerId != -1) {
-            // 2. 매니저의 출력 스트림(PrintWriter) 가져오기
+        if (managerId != -1 && reservation != null) {
+            // 2. 시설/비품 이름 판별 (시설이 null이면 비품명을 사용)
+            String targetName = (reservation.getFacility() != null)
+                    ? reservation.getFacility().getName()
+                    : (reservation.getEquipment() != null ? reservation.getEquipment().getName() : "알 수 없는 자원");
+
+            // 3. 매니저의 출력 스트림 가져오기
             PrintWriter managerOut = clientMap.get(managerId);
 
-            // 16진수 이모지: 📩 (0x1F4E9)
-            String msg = "\ud83d\udce9 [예약요청] " + reservation.getFacility().getName() + " 새로운 예약 신청이 들어왔습니다.";
+            // 4. 메시지 구성 (📩 0x1F4E9)
+            String msg = "\ud83d\udce9 [예약요청] '" + targetName + "' 새로운 예약 신청이 들어왔습니다.";
 
+            // 5. 발송 및 저장 로직
             if (managerOut != null) {
-                managerOut.println(msg);
-                System.out.println("📧 [매니저 알림] 예약 " + resId + " -> 매니저 " + managerId + "에게 전송");
+                managerOut.println(msg);                          // 소켓 전송만
+                alarmService.saveAlarmToDb(managerId, msg, "예약요청"); // DB저장만
+                System.out.println("📧 [매니저 알림] 예약 " + resId + " (" + targetName + ") -> 매니저 " + managerId + " 전송 완료");
             } else {
-                // 매니저가 오프라인일 때 DB에 저장하는 로직이 있다면 여기 추가
-                alarmService.sendAndSaveAlarm(managerId, msg, "[요청]");
+                alarmService.sendAndSaveAlarm(managerId, msg, "예약요청"); // 오프라인이면 DB저장만
                 System.out.println("⚠️ [매니저 부재] 매니저 " + managerId + " 오프라인. DB 저장됨.");
             }
         } else {
-            System.out.println("❌ [알림 실패] 예약 " + resId + "의 매니저 정보를 찾을 수 없습니다.");
+            System.out.println("❌ [알림 실패] 예약 " + resId + "의 정보 또는 매니저를 찾을 수 없습니다.");
         }
     }
 
     private void processReservationResult(long resId, String status) {
-        // 1. 상세 예약 정보 조회 (사용자 ID, 시설명 등을 알기 위해)
         Reservation reservation = alarmService.getReservationById(resId);
         if (reservation == null) return;
 
         int userId = reservation.getUser().getUserId();
         String targetName = (reservation.getFacility() != null) ?
                 reservation.getFacility().getName() : reservation.getEquipment().getName();
+        String targetType = (reservation.getFacility() != null) ? "시설" : "비품";
 
         if ("APPROVE".equals(status)) {
-            // [승인 시 처리]
-            // 1. 스케줄러 등록 (오늘 날짜 확인은 addReservationAlarm 내부에서 처리됨)
             AlarmScheduler.getAlarmScheduler().addReservationAlarm(reservation);
 
-            // 2. 즉시 알림 발송 (승인되었다는 사실을 바로 알려줌)
-            String msg = "\u2705 [예약결과] '" + targetName + "' 예약이 승인되었습니다!";
-            alarmService.sendAndSaveAlarm(userId, msg, "예약안내"); // 타입을 '예약안내'로 통일
+            String msg = "\u2705 [예약결과] " + targetType + " '" + targetName + "' 예약이 승인되었습니다!";
+            alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
 
             System.out.println("📅 [승인 완료] ID: " + resId + " 스케줄 등록 및 사용자 알림 전송");
 
         } else if ("REJECT".equals(status)) {
-            // [반려 시 처리]
-            // 1. 단순 알림 발송
-            String msg = "\u274c [예약결과] '" + targetName + "' 예약이 반려되었습니다. 사유를 확인해주세요.";
-            alarmService.sendAndSaveAlarm(userId, msg, "예약안내"); // 반려도 예약 결과 안내이므로 통일
+            String msg = "\u274c [예약결과] " + targetType + " '" + targetName + "' 예약이 반려되었습니다. 사유를 확인해주세요.";
+            alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
 
             System.out.println("❌ [반려 완료] ID: " + resId + " 사용자에게 반려 알림 전송");
         }
