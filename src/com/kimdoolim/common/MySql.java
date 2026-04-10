@@ -29,17 +29,26 @@ public class MySql implements Database {
     @Override
     public Connection getConnection() {
         Connection connection = null;
+        int retries = 10;
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            connection.setAutoCommit(false);
-        } catch (ClassNotFoundException e) {
-            System.out.println("드라이버 로드 실패: " + e.getMessage());
-        } catch (SQLException e) {
-            System.out.println("DB 연결 실패: " + e.getMessage());
+        while (retries-- > 0) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                connection = DriverManager.getConnection(URL, USER, PASSWORD);
+                return connection;
+            } catch (ClassNotFoundException e) {
+                System.out.println("드라이버 로드 실패: " + e.getMessage());
+                return null;
+            } catch (SQLException e) {
+                System.out.println("DB 연결 실패, 재시도 중... (" + retries + "회 남음)");
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
-        return connection;
+        return null;
     }
 
     @Override
