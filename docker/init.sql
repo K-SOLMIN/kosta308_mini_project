@@ -245,14 +245,14 @@ VALUES (1, 'admin', '1111', 'ADMIN', '관리자', '010-0000-0000', 0, 0, 'true',
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
 VALUES
 (1, 'manager1', '1111', 'MIDDLEADMIN', '김중간', '010-1111-1111', 0, 0, 'true', 'ACTIVE'),
-(1, 'manager2', '1111', 'MIDDLEADMIN', '이중간', '010-2222-2222', 0, 0, 'true', 'ACTIVE');
+(1, 'manager2', '1111', 'MIDDLEADMIN', '이중간', '010-2222-2222', 0, 0, 'true', 'ACTIVE'),
+(1, 'suji', '1234', 'ADMIN', '임수지', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
+(1, 'solmin', '1234', 'ADMIN', '김솔민', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
+(1, 'minjoong', '1234', 'ADMIN', '김민중', '010-5555-5555', 2, 1, 'true', 'ACTIVE');
 
 -- USER (일반 교사/학생)
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
 VALUES
-(1, 'suji', '1234', 'ADMIN', '임수지', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
-(1, 'solmin', '1234', 'ADMIN', '김솔민', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
-(1, 'minjoong', '1234', 'ADMIN', '김민중', '010-5555-5555', 2, 1, 'true', 'ACTIVE'),
 (1, 'user01', '1234', 'USER', '홍길동', '010-6666-6666', 6, 3, 'true', 'ACTIVE');
 
 -- 교시 (period)
@@ -263,7 +263,8 @@ VALUES
 ('3교시', '11:20:00', '12:20:00'),
 ('4교시', '13:20:00', '14:20:00'),
 ('5교시', '14:30:00', '15:30:00'),
-('6교시', '15:40:00', '16:40:00');
+('6교시', '15:40:00', '16:40:00'),
+('test교시', '02:00:00', '02:00:00');
 
 -- 시설 (facility) — manager1(user_id=2) 담당
 INSERT INTO facility (manager_id, location, name, max_capacity, max_reservation_unit, max_reservation_value, is_delete, status)
