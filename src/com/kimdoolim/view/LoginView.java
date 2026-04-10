@@ -1,4 +1,4 @@
-package com.kimdoolim.main.view;
+package com.kimdoolim.view;
 
 import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;

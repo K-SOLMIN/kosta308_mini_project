@@ -4,8 +4,8 @@ import com.kimdoolim.alarm.AlarmReceiveThread;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
-import com.kimdoolim.main.view.LoginView;
-import com.kimdoolim.main.view.MainView;
+import com.kimdoolim.view.LoginView;
+import com.kimdoolim.view.MainView;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -23,7 +23,7 @@ public class ClientMain {
         User loginUser = Auth.getUserInfo();
 
         try {
-            socket = new Socket("server", 9999);
+            socket = new Socket("localhost", 9999);
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             out.println(Auth.getUserInfo().getUserId());
 

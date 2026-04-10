@@ -1,4 +1,4 @@
-package com.kimdoolim.main.view;
+package com.kimdoolim.view;
 
 import com.kimdoolim.alarm.AlarmService;
 import com.kimdoolim.common.AppScanner;
