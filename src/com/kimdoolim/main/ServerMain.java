@@ -15,7 +15,7 @@ public class ServerMain {
         AlarmScheduler alarmScheduler = AlarmScheduler.getAlarmScheduler();
         alarmScheduler.startSchedule();
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(9999)) {
             System.out.println("🚀 [알림 서버] 포트 " + PORT + "에서 대기 중...");
 
             while (true) {

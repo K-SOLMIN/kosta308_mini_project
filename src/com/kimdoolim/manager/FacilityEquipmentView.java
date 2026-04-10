@@ -28,7 +28,8 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   public void facilityEquipmentMenu() {
     while (true) {
-      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      AppScanner.cls();
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.println("                       [ 시설/비품 관리 ]");
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.println(" 1.시설 관리 || 2.비품 관리 || 3.교시별 예약 차단 관리 || 0.뒤로 가기");
@@ -52,7 +53,8 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   private void facilityMenu() {
     while (true) {
-      System.out.println("\n────────────────────────────────────────────────────────────────────────────────────────────");
+      AppScanner.cls();
+      System.out.println("────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.println("                         [ 시설 관리 ]");
       System.out.println("────────────────────────────────────────────────────────────────────────────────────────────");
       if (Auth.getUserInfo().getPermission() == Permission.ADMIN) {
@@ -85,7 +87,8 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   private void equipmentMenu() {
     while (true) {
-      System.out.println("\n───────────────────────────────────────────────────────────────────────────────────────────────");
+      AppScanner.cls();
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.println("                         [ 비품 관리 ]");
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       if (Auth.getUserInfo().getPermission() == Permission.ADMIN) {

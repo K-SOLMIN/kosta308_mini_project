@@ -23,8 +23,7 @@ public class ClientMain {
         User loginUser = Auth.getUserInfo();
 
         try {
-            //socket = new Socket("localhost", 9999); local용
-            socket = new Socket("server", 9999);
+            socket = new Socket("localhost", 9999);
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             out.println(Auth.getUserInfo().getUserId());
 

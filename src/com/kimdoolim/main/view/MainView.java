@@ -33,7 +33,8 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void restrictedUserView() {
         while (true) {
-            System.out.println("\n" + BORDER);
+            AppScanner.cls();
+            System.out.println(BORDER);
             System.out.println(center("제한된 메뉴 (비활성 계정)"));
             System.out.println(BORDER);
             System.out.println(" 1.예약 내역 확인 || 2.마이페이지 || 0.종료");
@@ -56,9 +57,10 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void userMainView() {
         while (true) {
+            AppScanner.cls();
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
 
-            System.out.println("\n" + BORDER);
+            System.out.println(BORDER);
             System.out.println(center("사용자 메인 메뉴"));
             System.out.println(BORDER);
             System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
@@ -83,9 +85,10 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void middleAdminMainView() {
         while (true) {
+            AppScanner.cls();
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
 
-            System.out.println("\n" + BORDER);
+            System.out.println(BORDER);
             System.out.println(center("중간 관리자 메인 메뉴"));
             System.out.println(BORDER);
             System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
@@ -113,9 +116,10 @@ public class MainView {
     // ─────────────────────────────────────────────────────
     public void adminMainView() {
         while (true) {
+            AppScanner.cls();
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
 
-            System.out.println("\n" + BORDER);
+            System.out.println(BORDER);
             System.out.println(center("상위 관리자 메인 메뉴"));
             System.out.println(BORDER);
             System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
