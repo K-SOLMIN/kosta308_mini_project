@@ -125,7 +125,7 @@ public class ReservationService {
     int result = reservationDAO.cancelReservation(reservationId, Auth.getUserInfo().getUserId());
     return result > 0
         ? "예약이 취소되었습니다."
-        : "취소할 수 없습니다. (이미 취소/거절됐거나, 본인 예약이 아닙니다)";
+        : "취소할 수 없습니다. (이미 취소/거절됐거나, 사용된 내역입니다.)";
   }
 
   // ─────────────────────────────────────────────────────

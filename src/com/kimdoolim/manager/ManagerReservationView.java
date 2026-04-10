@@ -22,9 +22,9 @@ public class ManagerReservationView {
     while (true) {
       AppScanner.cls();
       System.out.println("──────────────────────────────────────────────────────────────────");
-      System.out.println("                         [ 예약 관리 ]");
+      System.out.println("                          [ 예약 관리 ]");
       System.out.println("──────────────────────────────────────────────────────────────────");
-      System.out.println(" 1.예약 승인/반려 || 2.예약 강제 취소 || 0.뒤로 가기");
+      System.out.println("        1.예약 승인/반려 || 2.예약 강제 취소 || 0.뒤로 가기");
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 

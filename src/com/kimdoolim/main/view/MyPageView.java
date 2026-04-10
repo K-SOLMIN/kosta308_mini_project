@@ -18,13 +18,13 @@ public class MyPageView {
       AppScanner.cls();
       User loginUser = Auth.getUserInfo();
 
-      System.out.println("──────────────────────────────────────────────────────────────────");
-      System.out.println("                        [ 마이페이지 ]");
-      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println("───────────────────────────────────────");
+      System.out.println("             [ 마이페이지 ]");
+      System.out.println("───────────────────────────────────────");
       printUserInfo(loginUser);
-      System.out.println("──────────────────────────────────────────────────────────────────");
-      System.out.println(" 1.비밀번호 변경 || 0.뒤로 가기");
-      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println("───────────────────────────────────────");
+      System.out.println("     1.비밀번호 변경 || 0.뒤로 가기");
+      System.out.println("───────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();

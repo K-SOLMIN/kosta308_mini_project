@@ -15,9 +15,9 @@ public class LoginView {
 
         AppScanner.cls();
         while (true) {
-            System.out.println("================================================================================");
-            System.out.println("                                   로  그  인");
-            System.out.println("================================================================================");
+            System.out.println("===============================");
+            System.out.println("           로  그  인");
+            System.out.println("===============================");
 
             System.out.print("아이디: ");
             String userId = scanner.nextLine();
@@ -49,9 +49,10 @@ public class LoginView {
         System.out.println();
         System.out.println(BLUE + "                      학교 시설 및 비품 예약 관리 시스템                      " + RESET);
         System.out.println();
-        System.out.println(CYAN + "                         [ Enter 를 눌러주세요 ]                         " + RESET);
+        System.out.println(CYAN + "                           [ Enter 를 눌러주세요 ]                         " + RESET);
         System.out.println();
         System.out.println(BLUE + "================================================================================" + RESET);
         scanner.nextLine();
+
     }
 }
