@@ -1,5 +1,6 @@
 package com.kimdoolim.manager;
 
+import com.kimdoolim.common.AppScanner;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,8 @@ public class BlockPeriodManageView {
     // ─────────────────────────────────────────────────────
     public void blockPeriodManageView() {
         while (true) {
-            System.out.println("\n=============================");
+            AppScanner.cls();
+            System.out.println("=============================");
             System.out.println("       제한 기간 관리 메뉴     ");
             System.out.println("=============================");
             System.out.println(" 1. 제한 일정 목록 조회");

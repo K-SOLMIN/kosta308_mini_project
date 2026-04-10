@@ -20,6 +20,7 @@ public class AlarmReceiveThread extends Thread{
 
             while((alarmMsg = msgReader.readLine()) != null) {
                 System.out.println("\n" + alarmMsg);
+
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
