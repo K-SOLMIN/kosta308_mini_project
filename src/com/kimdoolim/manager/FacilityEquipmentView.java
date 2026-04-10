@@ -292,8 +292,11 @@ public class FacilityEquipmentView {
       serialInput = scanner.nextLine().trim();
 
       System.out.println("상태 선택:");
-      String status = selectStatus();
-      if (status == null) return;
+      String status = selectStatus("취소하기");
+      if (status == null) {
+        System.out.println("등록이 취소되었습니다.");
+        return;
+      }
 
       details.add(EquipmentDetail.builder()
           .serialNo(serialInput)
@@ -316,7 +319,7 @@ public class FacilityEquipmentView {
       for (int i = 1; i <= quantity; i++) {
         String serial = String.format(fmt, serialInput, i);
         System.out.println("[" + serial + "] 상태 선택:");
-        String status = selectStatus();
+        String status = selectStatus("취소하기");
         if (status == null) {
           System.out.println("등록이 취소되었습니다.");
           return;
@@ -648,15 +651,22 @@ public class FacilityEquipmentView {
   // 상태 선택 헬퍼
   // ─────────────────────────────────────────────────────
   private String selectStatus() {
-    for (int i = 0; i < STATUS_LIST.length; i++) {
-      System.out.printf(" %d. %s%n", i + 1, STATUS_LIST[i]);
-    }
-    System.out.println(" 0. 뒤로");
-    System.out.print("상태 선택: ");
+    return selectStatus("뒤로");
+  }
 
-    int choice = readInt();
-    if (choice == 0 || choice < 1 || choice > STATUS_LIST.length) return null;
-    return STATUS_LIST[choice - 1];
+  private String selectStatus(String cancelLabel) {
+    while (true) {
+      for (int i = 0; i < STATUS_LIST.length; i++) {
+        System.out.printf(" %d. %s%n", i + 1, STATUS_LIST[i]);
+      }
+      System.out.println(" 0. " + cancelLabel);
+      System.out.print("상태 선택: ");
+
+      int choice = readInt();
+      if (choice == 0) return null;
+      if (choice >= 1 && choice <= STATUS_LIST.length) return STATUS_LIST[choice - 1];
+      System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+    }
   }
 
   // ─────────────────────────────────────────────────────

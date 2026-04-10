@@ -8,8 +8,10 @@ import com.kimdoolim.main.view.LoginView;
 import com.kimdoolim.main.view.MainView;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ClientMain {
 
@@ -22,7 +24,7 @@ public class ClientMain {
 
         try {
             socket = new Socket("localhost", 9999);
-            out = new PrintWriter(socket.getOutputStream(), true);
+            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             out.println(Auth.getUserInfo().getUserId());
 
             new Thread(new AlarmReceiveThread()).start();

@@ -9,6 +9,7 @@ import com.kimdoolim.main.ClientMain;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -253,7 +254,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 7. 반납 가능한 예약 목록 조회 (status = '승인')
+  // 7. 반납 가능한 예약 목록 조회 (status = '승인', 사용 시작 시간 이후)
   // ─────────────────────────────────────────────────────
   public List<Reservation> findReturnableReservations(int userId) {
     List<Reservation> list = new ArrayList<>();
@@ -261,6 +262,7 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
+    // 시간 필터는 MySQL CURTIME() 대신 Java LocalTime으로 처리 (시간대 오차 방지)
     String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
@@ -273,15 +275,25 @@ public class ReservationDAO {
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.user_id = ? AND r.status = '승인' " +
-        "AND (r.reservation_date < CURDATE() " +
-        "     OR (r.reservation_date = CURDATE() AND p.start_time <= CURTIME())) " +
         "ORDER BY r.reservation_date ASC";
 
     try {
       pstmt = conn.prepareStatement(sql);
       pstmt.setInt(1, userId);
       rs = pstmt.executeQuery();
-      list = parseReservationResultSet(rs, userId);
+      List<Reservation> all = parseReservationResultSet(rs, userId);
+
+      LocalDate today = LocalDate.now();
+      LocalTime now = LocalTime.now();
+
+      for (Reservation r : all) {
+        LocalDate resDate = r.getReservationDate();
+        LocalTime startTime = r.getPeriod().getStartTime();
+        // 과거 날짜이거나, 오늘이면서 시작 시간이 지났으면 반납 가능
+        if (resDate.isBefore(today) || (resDate.isEqual(today) && !now.isBefore(startTime))) {
+          list.add(r);
+        }
+      }
     } catch (SQLException e) {
       System.out.println("반납 가능 목록 조회 실패: " + e.getMessage());
     } finally {

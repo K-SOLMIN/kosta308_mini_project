@@ -6,6 +6,7 @@ import com.kimdoolim.main.ClientMain;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -18,7 +19,7 @@ public class AlarmReceiveThread extends Thread{
         System.out.println("알람받을 thread생성");
 
         try {
-            BufferedReader msgReader = new BufferedReader(new InputStreamReader(ClientMain.socket.getInputStream()));
+            BufferedReader msgReader = new BufferedReader(new InputStreamReader(ClientMain.socket.getInputStream(), StandardCharsets.UTF_8));
             String alarmMsg = "";
             int count = 0;
             int reservationId = 62;

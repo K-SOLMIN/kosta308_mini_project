@@ -155,7 +155,7 @@ public class ReservationView {
     List<Reservation> list = reservationService.getReturnableReservations();
 
     if (list.isEmpty()) {
-      System.out.println("반납 가능한 예약이 없습니다. (승인된 예약만 반납 가능)");
+      System.out.println("반납 가능한 예약이 없습니다. (사용 시작 시간이 지난 승인된 예약만 반납 가능)");
       return;
     }
 

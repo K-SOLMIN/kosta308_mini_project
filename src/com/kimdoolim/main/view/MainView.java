@@ -112,7 +112,7 @@ public class MainView {
             System.out.println("========================================================================");
             System.out.println("                           중간 관리자 메인 메뉴                          ");
             System.out.println("========================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 마이페이지 || 4. 예약하기 || 5. " + alarmLabel + " || 0. 종료");
+            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 마이페이지 || 4. 예약하기 || 5. 예약 내역 확인 || 6. " + alarmLabel + " || 0. 종료");
             System.out.println("========================================================================");
             System.out.print("메뉴 선택 : ");
 
@@ -136,6 +136,10 @@ public class MainView {
                     new ReservationView().reservationMenu();
                     break;
                 case 5:
+                    System.out.println(">> [예약 내역 확인]으로 이동합니다.");
+                    new ReservationView().reservationHistoryMenu();
+                    break;
+                case 6:
                     System.out.println(">> [알림조회]로 이동합니다.");
                     new AlarmView().alarmMenu();
                     break;
