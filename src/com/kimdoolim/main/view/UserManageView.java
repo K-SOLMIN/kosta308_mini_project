@@ -16,11 +16,11 @@ public class UserManageView {
   public void userManageMenu() {
     while (true) {
       AppScanner.cls();
-      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.println("                        [ 사용자 관리 ]");
-      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.println(" 1.목록 조회 || 2.사용자 등록 || 3.휴직 || 4.복직 || 5.전근 || 6.전근 승인 || 7.권한 변경 || 0.뒤로 가기");
-      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
@@ -85,7 +85,9 @@ public class UserManageView {
       );
     }
     System.out.println(div);
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -140,7 +142,9 @@ public class UserManageView {
         .build();
 
     System.out.println(">> " + userService.registerUser(newUser));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -155,7 +159,9 @@ public class UserManageView {
     System.out.print("휴직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.setLeaveOfAbsence(target.getUserId()));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -179,7 +185,9 @@ public class UserManageView {
     System.out.print("복직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.restoreFromLeave(list.get(index - 1).getUserId()));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -195,7 +203,9 @@ public class UserManageView {
     System.out.print("전근 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.setTransfer(target.getUserId()));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -219,7 +229,9 @@ public class UserManageView {
     System.out.print("승인하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.approveTransfer(list.get(index - 1).getUserId()));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
@@ -288,7 +300,9 @@ public class UserManageView {
     }
 
     System.out.println(">> " + userService.togglePermission(target.getUserId(), target.getPermission()));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────

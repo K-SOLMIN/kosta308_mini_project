@@ -52,7 +52,7 @@ public class ReservationView {
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.println("                       [ 예약 내역 확인 ]");
       System.out.println("──────────────────────────────────────────────────────────────────");
-      System.out.println(" 1.내 예약 목록 보기 || 2.반납 신청 || 0.뒤로 가기");
+      System.out.println("         1.내 예약 목록 보기 || 2.반납 신청 || 0.뒤로 가기");
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
@@ -80,14 +80,12 @@ public class ReservationView {
     if (list.isEmpty()) {
       System.out.println("예약 내역이 없습니다.");
       System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
       scanner.nextLine();
       return;
     }
 
     printMyReservationList(list);
     System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
     scanner.nextLine();
   }
 
@@ -162,7 +160,8 @@ public class ReservationView {
 
     if (list.isEmpty()) {
       System.out.println("반납 가능한 예약이 없습니다. (사용 시작 시간이 지난 승인된 예약만 반납 가능)");
-      AppScanner.pause(); return;
+      System.out.print("\n  [ 0. 돌아가기 ] ");
+      return;
     }
 
     // 번호(4) 예약날짜(12) 교시(시작~종료)(22) 구분(4) 시설/비품명(16) = 4+1+12+1+22+1+4+1+16 = 62
@@ -243,21 +242,27 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     // 교시별 차단 체크 (block_schedule)
     String scheduleError = reservationService.validateBlockSchedule(date, period, facility.getFacilityId(), null);
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, facility.getFacilityId(), null);
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     System.out.print("사용 목적을 입력하세요: ");
@@ -301,21 +306,27 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     // 교시별 차단 체크 (block_schedule)
     String scheduleError = reservationService.validateBlockSchedule(date, period, null, equipment.getEquipmentId());
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, null, equipment.getEquipmentId());
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      AppScanner.pause(); return;
+      System.out.println(" 0. 뒤로가기");
+      scanner.nextLine();
+      return;
     }
 
     System.out.print("사용 목적을 입력하세요: ");
@@ -336,7 +347,9 @@ public class ReservationView {
 
     String msg = reservationService.requestEquipmentReservation(date, period, equipment, purpose);
     System.out.println(">> " + msg);
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    scanner.nextLine();
+    return;
   }
 
   // ─────────────────────────────────────────────────────
