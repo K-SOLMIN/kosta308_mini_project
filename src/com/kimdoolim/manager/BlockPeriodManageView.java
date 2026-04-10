@@ -155,9 +155,11 @@ public class BlockPeriodManageView {
                     System.out.println(">> 제한 일정 등록 완료!");
                 else
                     System.out.println(">> 등록 실패. 다시 시도해주세요.");
+                waitForBack();
             }
         } catch (CancelInputException e) {
             System.out.println(">> 입력이 취소됐습니다.");
+            waitForBack();
         }
     }
 
@@ -176,6 +178,7 @@ public class BlockPeriodManageView {
 
             if (master == null) {
                 System.out.println(">> 존재하지 않는 제한 일정 ID입니다.");
+                waitForBack();
                 return;
             }
 
@@ -194,6 +197,7 @@ public class BlockPeriodManageView {
                 type = Integer.parseInt(typeInput);
             } catch (NumberFormatException e) {
                 System.out.println(">> 잘못된 입력입니다.");
+                waitForBack();
                 return;
             }
 
@@ -224,8 +228,11 @@ public class BlockPeriodManageView {
             }
 
             if (res > 0) System.out.println(">> 차단 대상이 성공적으로 적용되었습니다.");
+            else System.out.println(">> 적용 실패. 이미 등록된 대상이거나 오류가 발생했습니다.");
+            waitForBack();
         } catch (CancelInputException e) {
             System.out.println(">> 입력이 취소됐습니다.");
+            waitForBack();
         }
     }
 
@@ -244,6 +251,7 @@ public class BlockPeriodManageView {
 
             if (current == null) {
                 System.out.println(">> 존재하지 않는 일정 ID입니다.");
+                waitForBack();
                 return;
             }
 
@@ -292,8 +300,10 @@ public class BlockPeriodManageView {
             } else {
                 System.out.println("수정이 취소되었습니다.");
             }
+            waitForBack();
         } catch (CancelInputException e) {
             System.out.println(">> 입력이 취소됐습니다.");
+            waitForBack();
         }
     }
 
@@ -311,6 +321,7 @@ public class BlockPeriodManageView {
             Map<String, Object> target = controller.getBlockPeriodByDescription(desc);
             if (target == null) {
                 System.out.println(">> 존재하지 않는 일정입니다.");
+                waitForBack();
                 return;
             }
 
@@ -327,9 +338,20 @@ public class BlockPeriodManageView {
             } else {
                 System.out.println("삭제가 취소되었습니다.");
             }
+            waitForBack();
         } catch (CancelInputException e) {
             System.out.println(">> 입력이 취소됐습니다.");
+            waitForBack();
         }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 메시지 출력 후 엔터 대기
+    // ─────────────────────────────────────────────────────
+    private void waitForBack() {
+        System.out.println(" 0. 뒤로가기");
+        System.out.print("선택: ");
+        scanner.nextLine();
     }
 
     // ─────────────────────────────────────────────────────

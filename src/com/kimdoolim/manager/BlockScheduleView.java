@@ -124,7 +124,9 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.addSpecificBlock(date, period.getPeriodId(), desc, facilityId, equipmentId));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
@@ -169,7 +171,9 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.addRepeatBlock(day, startDate, endDate, period.getPeriodId(), desc, facilityId, equipmentId));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
@@ -186,7 +190,9 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.deleteBlockSchedule(id));
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
