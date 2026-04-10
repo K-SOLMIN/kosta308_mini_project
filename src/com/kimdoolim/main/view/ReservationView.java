@@ -72,37 +72,44 @@ public class ReservationView {
   // status '대기' → '승인 대기중' 으로 표시
   // ─────────────────────────────────────────────────────
   public void showMyReservations() {
+    AppScanner.cls();
     System.out.println("\n[내 예약 목록]");
 
     List<Reservation> list = reservationService.getMyReservations();
 
     if (list.isEmpty()) {
       System.out.println("예약 내역이 없습니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
       return;
     }
 
+    printMyReservationList(list);
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
+  }
+
+  // 목록 출력만 (pause 없음) - 취소 흐름 등에서 재사용
+  private void printMyReservationList(List<Reservation> list) {
     List<Period> allPeriods = reservationService.getAvailablePeriods();
     allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
 
     String div = "─".repeat(84);
     System.out.println(div);
     System.out.println(
-            fit("번호",      4) + "  " +
-                    fit("신청일시",  12) + "  " +
-                    fit("예약날짜",  12) + "  " +
-                    fit("교시",      10) + "  " +
-                    fit("구분",       4) + "  " +
-                    fit("시설/비품명", 16) + "  " +
-                    fit("상태",      14)
+        fit("번호", 4) + "  " + fit("신청일시", 12) + "  " +
+        fit("예약날짜", 12) + "  " + fit("교시", 10) + "  " +
+        fit("구분", 4) + "  " + fit("시설/비품명", 16) + "  " + fit("상태", 14)
     );
     System.out.println(div);
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
-
       String targetName = r.getTargetType().equals("FACILITY")
-              ? (r.getFacility() != null ? r.getFacility().getName() : "-")
-              : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
+          ? (r.getFacility() != null ? r.getFacility().getName() : "-")
+          : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
       String statusDisplay;
       if (r.getStatus().equals("대기")) {
@@ -110,17 +117,17 @@ public class ReservationView {
       } else if (r.getStatus().equals("승인")) {
         LocalDate today = LocalDate.now();
         LocalTime now   = LocalTime.now();
-        boolean isToday      = r.getReservationDate().isEqual(today);
+        boolean isToday     = r.getReservationDate().isEqual(today);
         boolean isDuringTime = !now.isBefore(r.getPeriod().getStartTime())
-                && !now.isAfter(r.getPeriod().getEndTime());
+            && !now.isAfter(r.getPeriod().getEndTime());
         statusDisplay = (isToday && isDuringTime) ? "사용중" : "승인";
       } else if (r.getStatus().equals("반납완료") && r.getReturnedAt() != null) {
         LocalTime currentEnd = r.getPeriod().getEndTime();
         LocalTime deadlineTime = allPeriods.stream()
-                .map(Period::getStartTime)
-                .filter(t -> t.isAfter(currentEnd))
-                .findFirst()
-                .orElse(currentEnd);
+            .map(Period::getStartTime)
+            .filter(t -> t.isAfter(currentEnd))
+            .findFirst()
+            .orElse(currentEnd);
         LocalDateTime deadline = r.getReservationDate().atTime(deadlineTime);
         statusDisplay = r.getReturnedAt().isAfter(deadline) ? "반납완료(지연)" : "반납완료";
       } else {
@@ -128,40 +135,47 @@ public class ReservationView {
       }
 
       System.out.println(
-              fit(String.valueOf(i + 1), 4) + "  " +
-                      fit(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 12) + "  " +
-                      fit(r.getReservationDate().toString(), 12) + "  " +
-                      fit(r.getPeriod().getPeriodName(), 10) + "  " +
-                      fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + "  " +
-                      fit(targetName, 16) + "  " +
-                      fit(statusDisplay, 14)
+          fit(String.valueOf(i + 1), 4) + "  " +
+          fit(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 12) + "  " +
+          fit(r.getReservationDate().toString(), 12) + "  " +
+          fit(r.getPeriod().getPeriodName(), 10) + "  " +
+          fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + "  " +
+          fit(targetName, 16) + "  " +
+          fit(statusDisplay, 14)
       );
 
-      // 취소 또는 거절인 경우 사유 출력
       if ((r.getStatus().equals("취소") || r.getStatus().equals("거절")) && r.getReason() != null) {
         System.out.println("     └ 사유: " + r.getReason());
       }
     }
-    System.out.println(div);
+    System.out.println("─".repeat(84));
   }
 
   // ─────────────────────────────────────────────────────
   // 반납 신청 흐름
   // ─────────────────────────────────────────────────────
   private void returnReservationFlow() {
+    AppScanner.cls();
     System.out.println("\n[반납 신청]");
 
     List<Reservation> list = reservationService.getReturnableReservations();
 
     if (list.isEmpty()) {
       System.out.println("반납 가능한 예약이 없습니다. (사용 시작 시간이 지난 승인된 예약만 반납 가능)");
-      return;
+      AppScanner.pause(); return;
     }
 
-    System.out.println("────────────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-12s %-22s %-6s %-15s%n",
-        "번호", "예약날짜", "교시 (시작~종료)", "구분", "시설/비품명");
-    System.out.println("────────────────────────────────────────────────────────────────────");
+    // 번호(4) 예약날짜(12) 교시(시작~종료)(22) 구분(4) 시설/비품명(16) = 4+1+12+1+22+1+4+1+16 = 62
+    String sep = "─".repeat(62);
+    System.out.println(sep);
+    System.out.println(
+        fit("번호", 4) + " " +
+        fit("예약날짜", 12) + " " +
+        fit("교시 (시작~종료)", 22) + " " +
+        fit("구분", 4) + " " +
+        fit("시설/비품명", 16)
+    );
+    System.out.println(sep);
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -172,15 +186,15 @@ public class ReservationView {
       String periodDisplay = r.getPeriod().getPeriodName()
           + " (" + r.getPeriod().getStartTime() + "~" + r.getPeriod().getEndTime() + ")";
 
-      System.out.printf("%-4d %-12s %-22s %-6s %-15s%n",
-          i + 1,
-          r.getReservationDate().toString(),
-          periodDisplay,
-          r.getTargetType().equals("FACILITY") ? "시설" : "비품",
-          targetName
+      System.out.println(
+          fit(String.valueOf(i + 1), 4) + " " +
+          fit(r.getReservationDate().toString(), 12) + " " +
+          fit(periodDisplay, 22) + " " +
+          fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + " " +
+          fit(targetName, 16)
       );
     }
-    System.out.println("────────────────────────────────────────────────────────────────────");
+    System.out.println(sep);
 
     System.out.print("반납할 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -206,12 +220,14 @@ public class ReservationView {
 
     String msg = reservationService.returnReservation(target.getReservationId(), condition);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 예약 신청 흐름
   // ─────────────────────────────────────────────────────
   private void facilityReservationFlow() {
+    AppScanner.cls();
     System.out.println("\n[시설 예약 신청]");
 
     Facility facility = selectFacility();
@@ -227,21 +243,21 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      return;
+      AppScanner.pause(); return;
     }
 
     // 교시별 차단 체크 (block_schedule)
     String scheduleError = reservationService.validateBlockSchedule(date, period, facility.getFacilityId(), null);
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      return;
+      AppScanner.pause(); return;
     }
 
     // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, facility.getFacilityId(), null);
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      return;
+      AppScanner.pause(); return;
     }
 
     System.out.print("사용 목적을 입력하세요: ");
@@ -258,19 +274,18 @@ public class ReservationView {
     System.out.print("예약을 신청하시겠습니까? (Y/N): ");
     String confirm = scanner.nextLine().trim().toUpperCase();
 
-    if (!confirm.equals("Y")) {
-      System.out.println("예약이 취소되었습니다.");
-      return;
-    }
+    if (!confirm.equals("Y")) { System.out.println("예약이 취소되었습니다."); return; }
 
     String msg = reservationService.requestFacilityReservation(date, period, facility, purpose);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 비품 예약 신청 흐름
   // ─────────────────────────────────────────────────────
   private void equipmentReservationFlow() {
+    AppScanner.cls();
     System.out.println("\n[비품 예약 신청]");
 
     Equipment equipment = selectEquipment();
@@ -286,21 +301,21 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      return;
+      AppScanner.pause(); return;
     }
 
     // 교시별 차단 체크 (block_schedule)
     String scheduleError = reservationService.validateBlockSchedule(date, period, null, equipment.getEquipmentId());
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      return;
+      AppScanner.pause(); return;
     }
 
     // 제한 기간 체크 (block_period)
     String blockError = reservationService.validateBlockPeriod(date, period, null, equipment.getEquipmentId());
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      return;
+      AppScanner.pause(); return;
     }
 
     System.out.print("사용 목적을 입력하세요: ");
@@ -317,35 +332,40 @@ public class ReservationView {
     System.out.print("예약을 신청하시겠습니까? (Y/N): ");
     String confirm = scanner.nextLine().trim().toUpperCase();
 
-    if (!confirm.equals("Y")) {
-      System.out.println("예약이 취소되었습니다.");
-      return;
-    }
+    if (!confirm.equals("Y")) { System.out.println("예약이 취소되었습니다."); return; }
 
     String msg = reservationService.requestEquipmentReservation(date, period, equipment, purpose);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 예약 취소 흐름
   // ─────────────────────────────────────────────────────
   private void cancelReservationFlow() {
+    AppScanner.cls();
     System.out.println("\n[예약 취소]");
 
     List<Reservation> list = reservationService.getMyReservations();
 
     if (list.isEmpty()) {
       System.out.println("취소할 예약이 없습니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
       return;
     }
 
-    showMyReservations();
+    printMyReservationList(list);
 
     System.out.print("취소할 예약 번호 입력 (0: 뒤로): ");
     int index = readInt();
     if (index == 0) return;
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
       return;
     }
 
@@ -354,13 +374,13 @@ public class ReservationView {
     System.out.print("정말 취소하시겠습니까? (Y/N): ");
     String confirm = scanner.nextLine().trim().toUpperCase();
 
-    if (!confirm.equals("Y")) {
-      System.out.println("취소가 중단되었습니다.");
-      return;
-    }
+    if (!confirm.equals("Y")) { System.out.println("취소가 중단되었습니다."); return; }
 
     String msg = reservationService.cancelReservation(target.getReservationId());
     System.out.println(">> " + msg);
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────

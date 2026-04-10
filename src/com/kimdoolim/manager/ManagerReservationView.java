@@ -1,6 +1,7 @@
 package com.kimdoolim.manager;
 
 import com.kimdoolim.common.AppScanner;
+import static com.kimdoolim.common.AppScanner.fit;
 import com.kimdoolim.dto.*;
 import com.kimdoolim.service.ReservationService;
 
@@ -44,7 +45,7 @@ public class ManagerReservationView {
   // 중간 관리자 → 담당 시설/비품 대기 예약 목록만
   // ─────────────────────────────────────────────────────
   private void approveOrRejectFlow() {
-
+    AppScanner.cls();
     System.out.println("\n[예약 승인 / 반려]");
 
     List<Reservation> list = reservationService.getPendingReservations();
@@ -78,6 +79,7 @@ public class ManagerReservationView {
       case 1:
         String approveMsg = reservationService.approveReservation(target.getReservationId());
         System.out.println(">> " + approveMsg);
+        AppScanner.pause();
         break;
       case 2:
         System.out.print("반려 사유를 입력하세요: ");
@@ -88,6 +90,7 @@ public class ManagerReservationView {
         }
         String rejectMsg = reservationService.rejectReservation(target.getReservationId(), reason);
         System.out.println(">> " + rejectMsg);
+        AppScanner.pause();
         break;
       case 0:
         return;
@@ -102,6 +105,7 @@ public class ManagerReservationView {
   // 중간 관리자 → 담당 시설/비품 승인 예약 목록만
   // ─────────────────────────────────────────────────────
   private void forceCancelFlow() {
+    AppScanner.cls();
     System.out.println("\n[예약 강제 취소]");
 
     List<Reservation> list = reservationService.getApprovedReservations();
@@ -139,16 +143,27 @@ public class ManagerReservationView {
 
     String msg = reservationService.forceCancelReservation(target.getReservationId(), reason);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 예약 목록 출력 (예약자 이름 포함)
   // ─────────────────────────────────────────────────────
   private void printReservationList(List<Reservation> list) {
-    System.out.println("──────────────────────────────────────────────────────────────────────────");
-    System.out.printf("%-4s %-8s %-14s %-12s %-8s %-6s %-15s %-6s%n",
-        "번호", "예약자", "신청시간", "예약날짜", "교시", "구분", "시설/비품명", "상태");
-    System.out.println("──────────────────────────────────────────────────────────────────────────");
+    // 번호(4) 예약자(8) 신청시간(12) 예약날짜(12) 교시(10) 구분(4) 시설/비품명(16) 상태(10) = 76 + 7spaces = 83
+    String sep = "─".repeat(83);
+    System.out.println(sep);
+    System.out.println(
+        fit("번호", 4) + " " +
+        fit("예약자", 8) + " " +
+        fit("신청시간", 12) + " " +
+        fit("예약날짜", 12) + " " +
+        fit("교시", 10) + " " +
+        fit("구분", 4) + " " +
+        fit("시설/비품명", 16) + " " +
+        fit("상태", 10)
+    );
+    System.out.println(sep);
 
     for (int i = 0; i < list.size(); i++) {
       Reservation r = list.get(i);
@@ -160,18 +175,20 @@ public class ManagerReservationView {
           ? r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm"))
           : "-";
 
-      System.out.printf("%-4d %-8s %-14s %-12s %-8s %-6s %-15s %-6s%n",
-          i + 1,
-          r.getUser().getName(),
-          createdAtStr,
-          r.getReservationDate().toString(),
-          r.getPeriod().getPeriodName(),
-          r.getTargetType().equals("FACILITY") ? "시설" : "비품",
-          targetName,
-          r.getStatus()
+      String typeStr = r.getTargetType().equals("FACILITY") ? "시설" : "비품";
+
+      System.out.println(
+          fit(String.valueOf(i + 1), 4) + " " +
+          fit(r.getUser().getName(), 8) + " " +
+          fit(createdAtStr, 12) + " " +
+          fit(r.getReservationDate().toString(), 12) + " " +
+          fit(r.getPeriod().getPeriodName(), 10) + " " +
+          fit(typeStr, 4) + " " +
+          fit(targetName, 16) + " " +
+          fit(r.getStatus(), 10)
       );
     }
-    System.out.println("──────────────────────────────────────────────────────────────────────────");
+    System.out.println(sep);
   }
 
   // ─────────────────────────────────────────────────────

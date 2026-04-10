@@ -13,8 +13,8 @@ public class LoginView {
 
         showSplash(scanner);
 
+        AppScanner.cls();
         while (true) {
-            AppScanner.cls();
             System.out.println("================================================================================");
             System.out.println("                                   로  그  인");
             System.out.println("================================================================================");
@@ -26,7 +26,12 @@ public class LoginView {
             String password = scanner.nextLine();
 
             if (Auth.login(userId, password) == 1) break;
-            System.out.println("아이디 또는 비밀번호가 올바르지 않습니다. 다시 시도해주세요.");
+
+            System.out.println("\n  ※ 아이디 또는 비밀번호가 올바르지 않습니다.");
+            System.out.print("  [ Enter 를 누르면 다시 시도합니다 ] ");
+            System.out.flush();
+            scanner.nextLine();
+            AppScanner.cls();
         }
     }
 
@@ -44,7 +49,7 @@ public class LoginView {
         System.out.println();
         System.out.println(BLUE + "                      학교 시설 및 비품 예약 관리 시스템                      " + RESET);
         System.out.println();
-        System.out.println(CYAN + "                  [ 아무 키나 누르고 Enter 를 눌러주세요 ]               " + RESET);
+        System.out.println(CYAN + "                         [ Enter 를 눌러주세요 ]                         " + RESET);
         System.out.println();
         System.out.println(BLUE + "================================================================================" + RESET);
         scanner.nextLine();

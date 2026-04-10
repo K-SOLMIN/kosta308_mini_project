@@ -55,6 +55,7 @@ public class MyPageView {
   // 비밀번호 변경
   // ─────────────────────────────────────────────────────
   private void changePasswordFlow() {
+    AppScanner.cls();
     System.out.println("\n[비밀번호 변경]");
 
     System.out.print("현재 비밀번호: ");
@@ -68,6 +69,7 @@ public class MyPageView {
 
     String msg = userService.changePassword(currentPwd, newPwd, confirmPwd);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   private int readInt() {

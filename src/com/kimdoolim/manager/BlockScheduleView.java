@@ -9,6 +9,7 @@ import com.kimdoolim.dto.Period;
 import com.kimdoolim.service.BlockScheduleService;
 import com.kimdoolim.service.FacilityEquipmentService;
 import com.kimdoolim.service.ReservationService;
+import static com.kimdoolim.common.AppScanner.fit;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -51,13 +52,19 @@ public class BlockScheduleView {
   // 1. 목록 조회
   // ─────────────────────────────────────────────────────
   private void showList() {
+    AppScanner.cls();
     List<Map<String, Object>> list = service.getAllBlockSchedules();
     if (list.isEmpty()) { System.out.println("등록된 차단 일정이 없습니다."); return; }
 
     System.out.println("\n[교시별 차단 목록]");
-    System.out.println("──────────────────────────────────────────────────────────");
-    System.out.println("ID  | 유형     | 날짜/요일                | 교시     | 적용대상   | 사유");
-    System.out.println("──────────────────────────────────────────────────────────");
+    // ID(4) 유형(8) 날짜/요일(22) 교시(8) 적용대상(12) 사유
+    String sep = "─".repeat(70);
+    System.out.println(sep);
+    System.out.println(
+        fit("ID", 4) + " " + fit("유형", 8) + " " +
+        fit("날짜/요일", 22) + " " + fit("교시", 8) + " " +
+        fit("적용대상", 12) + " " + "사유");
+    System.out.println(sep);
 
     for (Map<String, Object> m : list) {
       String type, dateInfo;
@@ -73,16 +80,22 @@ public class BlockScheduleView {
       if (m.get("facilityId") != null) target = "시설ID:" + m.get("facilityId");
       else if (m.get("equipmentId") != null) target = "비품ID:" + m.get("equipmentId");
 
-      System.out.printf("%-3s | %-8s | %-22s | %-8s | %-10s | %s%n",
-          m.get("id"), type, dateInfo, m.get("periodName"), target, m.get("desc"));
+      System.out.println(
+          fit(m.get("id").toString(), 4) + " " + fit(type, 8) + " " +
+          fit(dateInfo, 22) + " " + fit(m.get("periodName").toString(), 8) + " " +
+          fit(target, 12) + " " + m.get("desc"));
     }
-    System.out.println("──────────────────────────────────────────────────────────");
+    System.out.println(sep);
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
   // 2. 특정 날짜 + 교시 차단
   // ─────────────────────────────────────────────────────
   private void addSpecificFlow() {
+    AppScanner.cls();
     System.out.println("\n[특정 날짜 + 교시 차단 등록]");
 
     System.out.print("날짜 (yyyy-MM-dd): ");
@@ -111,12 +124,14 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.addSpecificBlock(date, period.getPeriodId(), desc, facilityId, equipmentId));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 3. 반복 요일 + 교시 차단
   // ─────────────────────────────────────────────────────
   private void addRepeatFlow() {
+    AppScanner.cls();
     System.out.println("\n[반복 요일 + 교시 차단 등록]");
     System.out.println(" 1.일 2.월 3.화 4.수 5.목 6.금 7.토");
     System.out.print("요일 선택: ");
@@ -154,12 +169,14 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.addRepeatBlock(day, startDate, endDate, period.getPeriodId(), desc, facilityId, equipmentId));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 4. 삭제
   // ─────────────────────────────────────────────────────
   private void deleteFlow() {
+    AppScanner.cls();
     showList();
     System.out.print("삭제할 ID 입력 (0: 뒤로): ");
     int id = readInt();
@@ -169,6 +186,7 @@ public class BlockScheduleView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.deleteBlockSchedule(id));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────

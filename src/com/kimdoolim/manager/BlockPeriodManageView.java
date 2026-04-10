@@ -113,6 +113,7 @@ public class BlockPeriodManageView {
     // 1. 조회
     // ─────────────────────────────────────────────────────
     private void searchAllBlockPeriods() {
+        AppScanner.cls();
         List<Map<String, Object>> list = controller.getAllBlockMasters();
         System.out.println("\n[현재 등록된 제한 일정]");
         System.out.println("============================================================");
@@ -134,6 +135,7 @@ public class BlockPeriodManageView {
     // 2. 등록
     // ─────────────────────────────────────────────────────
     private void enrollBlockMasterView() {
+        AppScanner.cls();
         System.out.println("\n[신규 제한 일정 생성]");
         System.out.println(CANCEL_NOTICE);
         try {
@@ -163,6 +165,7 @@ public class BlockPeriodManageView {
     // 3. 디테일 적용
     // ─────────────────────────────────────────────────────
     private void enrollBlockDetailView() {
+        AppScanner.cls();
         System.out.println("\n[제한 대상 적용]");
         System.out.println(CANCEL_NOTICE);
         searchAllBlockPeriods();
@@ -230,6 +233,7 @@ public class BlockPeriodManageView {
     // 4. 수정
     // ─────────────────────────────────────────────────────
     private void updateBlockPeriodView() {
+        AppScanner.cls();
         System.out.println("\n[제한 일정 수정]");
         System.out.println(CANCEL_NOTICE);
         searchAllBlockPeriods();
@@ -297,6 +301,7 @@ public class BlockPeriodManageView {
     // 5. 삭제
     // ─────────────────────────────────────────────────────
     private void deleteBlockPeriodView() {
+        AppScanner.cls();
         System.out.println("\n[제한 일정 삭제]");
         System.out.println(CANCEL_NOTICE);
         searchAllBlockPeriods();

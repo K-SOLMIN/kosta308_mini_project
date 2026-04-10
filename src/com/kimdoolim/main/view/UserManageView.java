@@ -43,6 +43,7 @@ public class UserManageView {
   // 1. 사용자 목록 출력
   // ─────────────────────────────────────────────────────
   public void showUserList() {
+    AppScanner.cls();
     System.out.println("\n[사용자 목록]");
     List<User> list = userService.getAllUsers();
 
@@ -84,12 +85,14 @@ public class UserManageView {
       );
     }
     System.out.println(div);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 2. 사용자 등록
   // ─────────────────────────────────────────────────────
   private void registerUserFlow() {
+    AppScanner.cls();
     System.out.println("\n[사용자 등록]");
 
     System.out.print("아이디: ");
@@ -137,12 +140,14 @@ public class UserManageView {
         .build();
 
     System.out.println(">> " + userService.registerUser(newUser));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 3. 휴직 처리
   // ─────────────────────────────────────────────────────
   private void leaveFlow() {
+    AppScanner.cls();
     System.out.println("\n[휴직 처리]");
     User target = selectActiveUser();
     if (target == null) return;
@@ -150,12 +155,14 @@ public class UserManageView {
     System.out.print("휴직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.setLeaveOfAbsence(target.getUserId()));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 4. 복직 처리 (휴직자만)
   // ─────────────────────────────────────────────────────
   private void restoreFlow() {
+    AppScanner.cls();
     System.out.println("\n[복직 처리]");
     List<User> list = userService.getAllUsers().stream()
         .filter(u -> "휴직".equals(u.getUserStatus()))
@@ -172,12 +179,14 @@ public class UserManageView {
     System.out.print("복직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.restoreFromLeave(list.get(index - 1).getUserId()));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 5. 전근 처리
   // ─────────────────────────────────────────────────────
   private void transferFlow() {
+    AppScanner.cls();
     System.out.println("\n[전근 처리]");
     User target = selectActiveUser();
     if (target == null) return;
@@ -186,12 +195,14 @@ public class UserManageView {
     System.out.print("전근 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.setTransfer(target.getUserId()));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 6. 전근 승인 (전근 상태인 사용자 활성화)
   // ─────────────────────────────────────────────────────
   private void approveTransferFlow() {
+    AppScanner.cls();
     System.out.println("\n[전근 승인]");
     List<User> list = userService.getAllUsers().stream()
         .filter(u -> "전근".equals(u.getUserStatus()))
@@ -208,6 +219,7 @@ public class UserManageView {
     System.out.print("승인하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
     System.out.println(">> " + userService.approveTransfer(list.get(index - 1).getUserId()));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
@@ -250,6 +262,7 @@ public class UserManageView {
   // 4. 권한 변경 (USER ↔ MIDDLEADMIN)
   // ─────────────────────────────────────────────────────
   private void togglePermissionFlow() {
+    AppScanner.cls();
     System.out.println("\n[권한 변경]");
     showUserList();
 
@@ -275,6 +288,7 @@ public class UserManageView {
     }
 
     System.out.println(">> " + userService.togglePermission(target.getUserId(), target.getPermission()));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────

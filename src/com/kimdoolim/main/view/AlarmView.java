@@ -14,6 +14,7 @@ public class AlarmView {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public void alarmMenu() {
+        AppScanner.cls();
         int userId = Auth.getUserInfo().getUserId();
 
         // 읽음 처리 전에 미읽 알림 먼저 조회
@@ -33,7 +34,8 @@ public class AlarmView {
         }
 
         System.out.println("─".repeat(50));
-        System.out.print("엔터를 누르면 메인 메뉴로 돌아갑니다.");
+        System.out.println(" 0. 뒤로가기");
+        System.out.print("선택: ");
         AppScanner.getScanner().nextLine();
     }
 }

@@ -1,6 +1,7 @@
 package com.kimdoolim.manager;
 
 import com.kimdoolim.common.AppScanner;
+import static com.kimdoolim.common.AppScanner.fit;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Equipment;
 import com.kimdoolim.dto.EquipmentDetail;
@@ -122,6 +123,7 @@ public class FacilityEquipmentView {
   // 중간관리자 → 본인 담당만
   // ─────────────────────────────────────────────────────
   private void showFacilityList() {
+    AppScanner.cls();
     System.out.println("\n[시설 목록]");
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
@@ -135,14 +137,18 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(78) : "─".repeat(62);
+    // 번호(4) 시설명(16) 위치(12) 수용인원(8) 상태(8) [담당자(10)]
+    String div = isAdmin ? "─".repeat(63) : "─".repeat(52);
     System.out.println(div);
     if (isAdmin) {
-      System.out.printf("%-4s %-15s %-10s %-8s %-8s %-10s%n",
-          "번호", "시설명", "위치", "수용인원", "상태", "담당자");
+      System.out.println(
+          fit("번호", 4) + " " + fit("시설명", 16) + " " +
+          fit("위치", 12) + " " + fit("수용인원", 8) + " " +
+          fit("상태", 8) + " " + fit("담당자", 10));
     } else {
-      System.out.printf("%-4s %-15s %-10s %-8s %-8s%n",
-          "번호", "시설명", "위치", "수용인원", "상태");
+      System.out.println(
+          fit("번호", 4) + " " + fit("시설명", 16) + " " +
+          fit("위치", 12) + " " + fit("수용인원", 8) + " " + fit("상태", 8));
     }
     System.out.println(div);
 
@@ -150,14 +156,21 @@ public class FacilityEquipmentView {
       Facility f = list.get(i);
       if (isAdmin) {
         String managerName = (f.getUser() != null) ? f.getUser().getName() : "담당자 없음";
-        System.out.printf("%-4d %-15s %-10s %-8d %-8s %-10s%n",
-            i + 1, f.getName(), f.getLocation(), f.getMaxCapacity(), f.getStatus(), managerName);
+        System.out.println(
+            fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 16) + " " +
+            fit(f.getLocation(), 12) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
+            fit(f.getStatus(), 8) + " " + fit(managerName, 10));
       } else {
-        System.out.printf("%-4d %-15s %-10s %-8d %-8s%n",
-            i + 1, f.getName(), f.getLocation(), f.getMaxCapacity(), f.getStatus());
+        System.out.println(
+            fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 16) + " " +
+            fit(f.getLocation(), 12) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
+            fit(f.getStatus(), 8));
       }
     }
     System.out.println(div);
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
@@ -166,6 +179,7 @@ public class FacilityEquipmentView {
   // 중간관리자 → 본인 담당만
   // ─────────────────────────────────────────────────────
   private void showEquipmentList() {
+    AppScanner.cls();
     System.out.println("\n[비품 목록]");
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
@@ -179,14 +193,20 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(110) : "─".repeat(94);
+    // 번호(4) 비품명(14) 위치(12) 수량(6) 시리얼(기본)(18) 상태(8) 낱개현황(16) [담당자(10)]
+    String div = isAdmin ? "─".repeat(93) : "─".repeat(82);
     System.out.println(div);
     if (isAdmin) {
-      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-20s %-10s%n",
-          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "낱개현황", "담당자");
+      System.out.println(
+          fit("번호", 4) + " " + fit("비품명", 14) + " " +
+          fit("위치", 12) + " " + fit("수량", 6) + " " +
+          fit("시리얼(기본)", 18) + " " + fit("상태", 8) + " " +
+          fit("낱개현황", 16) + " " + fit("담당자", 10));
     } else {
-      System.out.printf("%-4s %-15s %-10s %-6s %-18s %-8s %-20s%n",
-          "번호", "비품명", "위치", "수량", "시리얼(기본)", "상태", "낱개현황");
+      System.out.println(
+          fit("번호", 4) + " " + fit("비품명", 14) + " " +
+          fit("위치", 12) + " " + fit("수량", 6) + " " +
+          fit("시리얼(기본)", 18) + " " + fit("상태", 8) + " " + fit("낱개현황", 16));
     }
     System.out.println(div);
 
@@ -197,22 +217,30 @@ public class FacilityEquipmentView {
           ? e.getStatusSummary() : "-";
       if (isAdmin) {
         String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
-        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-20s %-10s%n",
-            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(),
-            e.getStatus(), summaryStr, managerName);
+        System.out.println(
+            fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
+            fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
+            fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
+            fit(summaryStr, 16) + " " + fit(managerName, 10));
       } else {
-        System.out.printf("%-4d %-15s %-10s %-6s %-18s %-8s %-20s%n",
-            i + 1, e.getName(), e.getLocation(), qtyStr, e.getSerialNo(),
-            e.getStatus(), summaryStr);
+        System.out.println(
+            fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
+            fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
+            fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
+            fit(summaryStr, 16));
       }
     }
     System.out.println(div);
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 등록 흐름
   // ─────────────────────────────────────────────────────
   private void registerFacilityFlow() {
+    AppScanner.cls();
     System.out.println("\n[시설 등록]");
 
     System.out.print("시설 이름: ");
@@ -253,6 +281,7 @@ public class FacilityEquipmentView {
 
     String msg = service.registerFacility(facility);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
@@ -262,6 +291,7 @@ public class FacilityEquipmentView {
   //                   낱개마다 상태 개별 선택
   // ─────────────────────────────────────────────────────
   private void registerEquipmentFlow() {
+    AppScanner.cls();
     System.out.println("\n[비품 등록]");
 
     System.out.print("비품 이름: ");
@@ -365,12 +395,14 @@ public class FacilityEquipmentView {
 
     String msg = service.registerEquipmentWithDetails(equipment, details);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 상태 수정 흐름
   // ─────────────────────────────────────────────────────
   private void updateFacilityStatusFlow() {
+    AppScanner.cls();
     System.out.println("\n[시설 상태 수정]");
 
     showFacilityList();
@@ -395,6 +427,7 @@ public class FacilityEquipmentView {
 
     String msg = service.updateFacilityStatus(target.getFacilityId(), status);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
@@ -403,6 +436,7 @@ public class FacilityEquipmentView {
   //  - 낱개가 있는 비품(quantity>0)  : 세트 전체 or 낱개 개별 선택
   // ─────────────────────────────────────────────────────
   private void updateEquipmentStatusFlow() {
+    AppScanner.cls();
     System.out.println("\n[비품 상태 수정]");
 
     showEquipmentList();
@@ -449,6 +483,7 @@ public class FacilityEquipmentView {
 
     String msg = service.updateEquipmentStatus(target.getEquipmentId(), status);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
@@ -463,13 +498,14 @@ public class FacilityEquipmentView {
     }
 
     System.out.println("\n── [" + equipment.getName() + "] 낱개 목록 ──────────────────");
-    System.out.printf("%-4s %-25s %-8s%n", "번호", "시리얼번호", "현재상태");
-    System.out.println("─".repeat(44));
+    String detailSep = "─".repeat(44);
+    System.out.println(fit("번호", 4) + " " + fit("시리얼번호", 25) + " " + fit("현재상태", 8));
+    System.out.println(detailSep);
     for (int i = 0; i < details.size(); i++) {
       EquipmentDetail d = details.get(i);
-      System.out.printf("%-4d %-25s %-8s%n", i + 1, d.getSerialNo(), d.getStatus());
+      System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(d.getSerialNo(), 25) + " " + fit(d.getStatus(), 8));
     }
-    System.out.println("─".repeat(44));
+    System.out.println(detailSep);
 
     System.out.print("상태를 변경할 낱개 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -487,12 +523,14 @@ public class FacilityEquipmentView {
 
     String msg = service.updateEquipmentDetailStatus(target.getEquipmentDetailId(), status);
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 삭제 흐름
   // ─────────────────────────────────────────────────────
   private void deleteFacilityFlow() {
+    AppScanner.cls();
     System.out.println("\n[시설 삭제]");
 
     showFacilityList();
@@ -521,12 +559,14 @@ public class FacilityEquipmentView {
 
     String msg = service.deleteFacility(target.getFacilityId());
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 비품 삭제 흐름
   // ─────────────────────────────────────────────────────
   private void deleteEquipmentFlow() {
+    AppScanner.cls();
     System.out.println("\n[비품 삭제]");
 
     showEquipmentList();
@@ -555,12 +595,14 @@ public class FacilityEquipmentView {
 
     String msg = service.deleteEquipment(target.getEquipmentId());
     System.out.println(">> " + msg);
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 시설 담당자 재배정 흐름 (상위관리자 전용)
   // ─────────────────────────────────────────────────────
   private void reassignFacilityManagerFlow() {
+    AppScanner.cls();
     System.out.println("\n[시설 담당자 재배정]");
 
     showFacilityList();
@@ -597,12 +639,14 @@ public class FacilityEquipmentView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.updateFacilityManager(target.getFacilityId(), newManagerId));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
   // 비품 담당자 재배정 흐름 (상위관리자 전용)
   // ─────────────────────────────────────────────────────
   private void reassignEquipmentManagerFlow() {
+    AppScanner.cls();
     System.out.println("\n[비품 담당자 재배정]");
 
     showEquipmentList();
@@ -639,6 +683,7 @@ public class FacilityEquipmentView {
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
 
     System.out.println(">> " + service.updateEquipmentManager(target.getEquipmentId(), newManagerId));
+    AppScanner.pause();
   }
 
   // ─────────────────────────────────────────────────────
