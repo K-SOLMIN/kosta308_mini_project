@@ -44,6 +44,7 @@ public class SocketSession extends Thread{
                     System.out.println("⚠️ [중복 로그인] User " + socketUserId + " 기존 세션 강제 종료");
                 }
 
+                this.myWriter = out;
                 clientMap.put(socketUserId, out);
                 System.out.println("🔑 [연결성공] User " + socketUserId + " (현재 " + clientMap.size() + "명 접속 중)");
             }
@@ -111,7 +112,9 @@ public class SocketSession extends Thread{
             e.printStackTrace();
             System.out.println("🔌 [접속종료] User " + socketUserId);
         } finally {
-            if (socketUserId != -1) clientMap.remove(socketUserId);
+            // 내 PrintWriter가 map에 그대로 있을 때만 제거
+            // (중복 로그인으로 새 세션이 교체한 경우엔 제거하지 않음)
+            if (socketUserId != -1) clientMap.remove(socketUserId, myWriter);
         }
     }
 
