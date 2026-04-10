@@ -54,7 +54,13 @@ public class BlockScheduleView {
   private void showList() {
     AppScanner.cls();
     List<Map<String, Object>> list = service.getAllBlockSchedules();
-    if (list.isEmpty()) { System.out.println("등록된 차단 일정이 없습니다."); return; }
+    if (list.isEmpty()) {
+      System.out.println("등록된 차단 일정이 없습니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.println("\n[교시별 차단 목록]");
     // ID(4) 유형(8) 날짜/요일(22) 교시(8) 적용대상(12) 사유
@@ -181,6 +187,14 @@ public class BlockScheduleView {
   // ─────────────────────────────────────────────────────
   private void deleteFlow() {
     AppScanner.cls();
+    List<Map<String, Object>> list = service.getAllBlockSchedules();
+    if (list.isEmpty()) {
+      System.out.println("등록된 차단 일정이 없습니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
     showList();
     System.out.print("삭제할 ID 입력 (0: 뒤로): ");
     int id = readInt();

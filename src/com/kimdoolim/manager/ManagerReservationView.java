@@ -52,6 +52,9 @@ public class ManagerReservationView {
 
     if (list.isEmpty()) {
       System.out.println("대기 중인 예약이 없습니다.");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
       return;
     }
 
@@ -116,6 +119,9 @@ public class ManagerReservationView {
 
     if (list.isEmpty()) {
       System.out.println("강제 취소할 예약이 없습니다. (승인된 예약만 강제 취소 가능)");
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
       return;
     }
 

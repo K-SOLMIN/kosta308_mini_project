@@ -398,7 +398,12 @@ public class FacilityEquipmentView {
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
-    if (list.isEmpty()) return;
+    if (list.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("수정할 시설 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -434,7 +439,12 @@ public class FacilityEquipmentView {
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
-    if (list.isEmpty()) return;
+    if (list.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("수정할 비품 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -532,7 +542,12 @@ public class FacilityEquipmentView {
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
-    if (list.isEmpty()) return;
+    if (list.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("삭제할 시설 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -570,7 +585,12 @@ public class FacilityEquipmentView {
 
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
-    if (list.isEmpty()) return;
+    if (list.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("삭제할 비품 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -607,7 +627,12 @@ public class FacilityEquipmentView {
     printFacilityTable();
 
     List<Facility> facilities = service.getAllFacilities();
-    if (facilities.isEmpty()) return;
+    if (facilities.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("재배정할 시설 번호 선택 (0: 뒤로): ");
     int index = readInt();
@@ -653,7 +678,12 @@ public class FacilityEquipmentView {
     printEquipmentTable();
 
     List<Equipment> equipments = service.getAllEquipments();
-    if (equipments.isEmpty()) return;
+    if (equipments.isEmpty()) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      scanner.nextLine();
+      return;
+    }
 
     System.out.print("재배정할 비품 번호 선택 (0: 뒤로): ");
     int index = readInt();
