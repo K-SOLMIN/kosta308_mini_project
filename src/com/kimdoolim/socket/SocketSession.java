@@ -41,6 +41,8 @@ public class SocketSession extends Thread{
             //
             String line;
             while ((line = in.readLine()) != null) {
+                if (line.equals("PING")) continue;
+
                 System.out.println("socketReadLine : " + line);
 
                 if (line.startsWith("RESERVATION_RESULT:")) {

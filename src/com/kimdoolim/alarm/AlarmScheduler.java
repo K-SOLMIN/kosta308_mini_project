@@ -133,18 +133,23 @@ public class AlarmScheduler {
         if (delay < 0) delay = 3;
 
         return scheduler.schedule(() -> {
-            String resourceName = (reservation.getFacility() != null)
-                    ? reservation.getFacility().getName()
-                    : reservation.getEquipment().getName();
+            try {
+                String resourceName = (reservation.getFacility() != null)
+                        ? reservation.getFacility().getName()
+                        : reservation.getEquipment().getName();
 
-            long actualMinutesLeft = Duration.between(LocalTime.now(), targetLocalTime).toMinutes();
-            String message = (type.equals("START"))
-                    ? String.format("🔔 [사용안내] '%s' 사용시작 %d분 전입니다.", resourceName, actualMinutesLeft)
-                    : String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, actualMinutesLeft);
+                long actualMinutesLeft = Duration.between(LocalTime.now(), targetLocalTime).toMinutes();
+                String message = (type.equals("START"))
+                        ? String.format("🔔 [사용안내] '%s' 사용시작 %d분 전입니다.", resourceName, actualMinutesLeft)
+                        : String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, actualMinutesLeft);
 
-            String alarmType = type.equals("START") ? "사용안내" : "반납안내";
-            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, alarmType);
-            System.out.println("🔔 [" + type + " 발송] " + reservation.getUser().getName() + "님께 전송 완료");
+                String alarmType = type.equals("START") ? "사용안내" : "반납안내";
+                alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, alarmType);
+                System.out.println("🔔 [" + type + " 발송] " + reservation.getUser().getName() + "님께 전송 완료");
+            } catch (Exception e) {
+                System.err.println("❌ [" + type + " 알람 발송 실패] 예약 ID: " + reservation.getReservationId() + " / 원인: " + e.getMessage());
+                e.printStackTrace();
+            }
         }, delay, TimeUnit.SECONDS);
     }
 
@@ -157,21 +162,26 @@ public class AlarmScheduler {
         if (delay < 0) delay = 3;
 
         return scheduler.schedule(() -> {
-            boolean isReturned = alarmService.isAlreadyReturned(reservation.getReservationId());
+            try {
+                boolean isReturned = alarmService.isAlreadyReturned(reservation.getReservationId());
 
-            if (isReturned) {
-                System.out.println("✅ [연체알림 스킵] 예약 ID: " + reservation.getReservationId() + " 이미 반납 완료");
-                return;
+                if (isReturned) {
+                    System.out.println("✅ [연체알림 스킵] 예약 ID: " + reservation.getReservationId() + " 이미 반납 완료");
+                    return;
+                }
+
+                String resourceName = (reservation.getFacility() != null)
+                        ? reservation.getFacility().getName()
+                        : reservation.getEquipment().getName();
+
+                String msg = "⚠️ [연체안내] '" + resourceName + "' 반납 시간이 지났습니다. 즉시 반납해주세요.";
+                alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), msg, "연체안내");
+
+                System.out.println("⚠️ [연체알림 발송] " + reservation.getUser().getName() + "님께 전송 완료");
+            } catch (Exception e) {
+                System.err.println("❌ [연체 알람 발송 실패] 예약 ID: " + reservation.getReservationId() + " / 원인: " + e.getMessage());
+                e.printStackTrace();
             }
-
-            String resourceName = (reservation.getFacility() != null)
-                    ? reservation.getFacility().getName()
-                    : reservation.getEquipment().getName();
-
-            String msg = "⚠️ [연체안내] '" + resourceName + "' 반납 시간이 지났습니다. 즉시 반납해주세요.";
-            alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), msg, "연체안내");
-
-            System.out.println("⚠️ [연체알림 발송] " + reservation.getUser().getName() + "님께 전송 완료");
         }, delay, TimeUnit.SECONDS);
     }
 }

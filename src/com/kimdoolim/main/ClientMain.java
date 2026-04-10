@@ -26,6 +26,20 @@ public class ClientMain {
             out.println(Auth.getUserInfo().getUserId());
 
             new Thread(new AlarmReceiveThread()).start();
+
+            // 연결 유지용 heartbeat: 30초마다 PING 전송
+            Thread heartbeat = new Thread(() -> {
+                while (!socket.isClosed()) {
+                    try {
+                        Thread.sleep(30_000);
+                        if (out != null) out.println("PING");
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            });
+            heartbeat.setDaemon(true);
+            heartbeat.start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
