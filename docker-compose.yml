@@ -1,0 +1,89 @@
+version: '3.8'
+
+networks:
+  kimdoolim-network:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.0.45-debian
+    container_name: kimdoolim-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1111
+      MYSQL_DATABASE: kimdoolim
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    networks:
+      - kimdoolim-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    container_name: kimdoolim-server
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - kimdoolim-network
+    environment:
+      - LANG=ko_KR.UTF-8
+      - LC_ALL=ko_KR.UTF-8
+
+  client1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    container_name: kimdoolim-client1
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
+    networks:
+      - kimdoolim-network
+    environment:
+      - LANG=ko_KR.UTF-8
+      - LC_ALL=ko_KR.UTF-8
+
+  client2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    container_name: kimdoolim-client2
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
+    networks:
+      - kimdoolim-network
+    environment:
+      - LANG=ko_KR.UTF-8
+      - LC_ALL=ko_KR.UTF-8
+
+  client3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    container_name: kimdoolim-client3
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
+    networks:
+      - kimdoolim-network
+    environment:
+      - LANG=ko_KR.UTF-8
+      - LC_ALL=ko_KR.UTF-8
+
+volumes:
+  mysql-data:
