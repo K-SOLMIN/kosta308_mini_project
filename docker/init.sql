@@ -239,16 +239,16 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 사용자 (비밀번호 평문)
 -- ADMIN
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
-VALUES (1, 'admin', '1111', 'ADMIN', '관리자', '010-0000-0000', 0, 0, 'true', 'ACTIVE');
+VALUES (1, 'admin', '1234', 'ADMIN', '관리자', '010-0000-0000', 0, 0, 'true', 'ACTIVE');
 
 -- MIDDLEADMIN (시설담당, 비품담당)
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
 VALUES
-(1, 'manager1', '1111', 'MIDDLEADMIN', '김중간', '010-1111-1111', 0, 0, 'true', 'ACTIVE'),
-(1, 'manager2', '1111', 'MIDDLEADMIN', '이중간', '010-2222-2222', 0, 0, 'true', 'ACTIVE'),
-(1, 'suji', '1234', 'ADMIN', '임수지', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
-(1, 'solmin', '1234', 'ADMIN', '김솔민', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
-(1, 'minjoong', '1234', 'ADMIN', '김민중', '010-5555-5555', 2, 1, 'true', 'ACTIVE');
+(1, 'manager1', '1234', 'MIDDLEADMIN', '김중간', '010-1111-1111', 0, 0, 'true', 'ACTIVE'),
+(1, 'manager2', '1234', 'MIDDLEADMIN', '이중간', '010-2222-2222', 0, 0, 'true', 'ACTIVE'),
+(1, 'suji', '1234', 'MIDDLEADMIN', '임수지', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
+(1, 'solmin', '1234', 'MIDDLEADMIN', '김솔민', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
+(1, 'minjoong', '1234', 'MIDDLEADMIN', '김민중', '010-5555-5555', 2, 1, 'true', 'ACTIVE');
 
 -- USER (일반 교사/학생)
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
