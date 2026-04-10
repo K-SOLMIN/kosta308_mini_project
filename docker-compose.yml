@@ -14,12 +14,13 @@ services:
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
     ports:
-      - "3306:3306"
+      - "3308:3306"
     volumes:
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql-data:/var/lib/mysql
     networks:
       - kimdoolim-network
+    restart: always
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111"]
       interval: 10s
@@ -27,6 +28,7 @@ services:
       retries: 5
 
   server:
+    image: kimsolmin/socketserver:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.server
@@ -36,11 +38,13 @@ services:
         condition: service_healthy
     networks:
       - kimdoolim-network
+    restart: always
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
 
   client1:
+    image: kimsolmin/socketclient:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.client
@@ -49,6 +53,7 @@ services:
       - server
     stdin_open: true
     tty: true
+    restart: always
     networks:
       - kimdoolim-network
     environment:
@@ -56,6 +61,7 @@ services:
       - LC_ALL=ko_KR.UTF-8
 
   client2:
+    image: kimsolmin/socketclient:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.client
@@ -64,6 +70,7 @@ services:
       - server
     stdin_open: true
     tty: true
+    restart: always
     networks:
       - kimdoolim-network
     environment:
@@ -71,6 +78,7 @@ services:
       - LC_ALL=ko_KR.UTF-8
 
   client3:
+    image: kimsolmin/socketclient:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.client
@@ -79,6 +87,7 @@ services:
       - server
     stdin_open: true
     tty: true
+    restart: always
     networks:
       - kimdoolim-network
     environment:

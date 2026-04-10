@@ -1,11 +1,20 @@
 FROM eclipse-temurin:17-jdk
 
+RUN apt-get update && apt-get install -y locales && \
+    locale-gen ko_KR.UTF-8 && \
+    update-locale LANG=ko_KR.UTF-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV LANG=ko_KR.UTF-8
+ENV LC_ALL=ko_KR.UTF-8
+ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8"
+
 WORKDIR /app
 
 COPY out/production/kosta308_mini_project ./classes
 COPY lib/mysql-connector-j-8.0.33.jar ./lib/mysql-connector-j-8.0.33.jar
-COPY lib/lombok.jar ./lib/lombok.jar
+COPY lib/lombok-1.18.42.jar ./lib/lombok-1.18.42.jar
 
-CMD ["java", "-Dfile.encoding=UTF-8", \
-     "-cp", "./classes:./lib/mysql-connector-j-8.0.33.jar:./lib/lombok.jar", \
+CMD ["java", "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", \
+     "-cp", "./classes:./lib/mysql-connector-j-8.0.33.jar:./lib/lombok-1.18.42.jar", \
      "com.kimdoolim.main.ServerMain"]

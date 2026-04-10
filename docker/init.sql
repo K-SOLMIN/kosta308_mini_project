@@ -246,9 +246,9 @@ VALUES
 -- USER (일반 교사/학생)
 INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
 VALUES
-(1, 'suji', '1234', 'ADMIN', '홍길동', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
-(1, 'solmin', '1234', 'ADMIN', '김철수', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
-(1, 'minjoong', '1234', 'ADMIN', '이영희', '010-5555-5555', 2, 1, 'true', 'ACTIVE'),
+(1, 'suji', '1234', 'ADMIN', '임수지', '010-3333-3333', 1, 1, 'true', 'ACTIVE'),
+(1, 'solmin', '1234', 'ADMIN', '김솔민', '010-4444-4444', 1, 2, 'true', 'ACTIVE'),
+(1, 'minjoong', '1234', 'ADMIN', '김민중', '010-5555-5555', 2, 1, 'true', 'ACTIVE'),
 (1, 'user01', '1234', 'USER', '홍길동', '010-6666-6666', 6, 3, 'true', 'ACTIVE');
 
 -- 교시 (period)
