@@ -161,6 +161,8 @@ public class AlarmScheduler {
         long delay = Duration.between(LocalDateTime.now(), endDateTime).getSeconds();
         if (delay < 0) delay = 3;
 
+        System.out.println("futureDelay : " + delay);
+
         return scheduler.schedule(() -> {
             try {
                 boolean isReturned = alarmService.isAlreadyReturned(reservation.getReservationId());

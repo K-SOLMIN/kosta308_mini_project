@@ -29,7 +29,7 @@ public class AlarmView {
         } else {
             for (Alarm alarm : alarms) {
                 String date = alarm.getGenerateDate().format(FMT);
-                System.out.printf("  [%s] %s  (%s)%n", alarm.getType(), alarm.getContent(), date);
+                System.out.printf("  %s  (%s)%n", alarm.getContent(), date);
             }
         }
 
