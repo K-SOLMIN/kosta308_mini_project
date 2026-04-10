@@ -87,11 +87,12 @@ public class ManagerReservationView {
         scanner.nextLine();
         break;
       case 2:
-        System.out.print("반려 사유를 입력하세요: ");
-        String reason = scanner.nextLine().trim();
-        if (reason.isEmpty()) {
-          System.out.println("반려 사유는 필수입니다.");
-          return;
+        String reason;
+        while (true) {
+          System.out.print("반려 사유를 입력하세요: ");
+          reason = scanner.nextLine().trim();
+          if (!reason.isEmpty()) break;
+          System.out.println("  ※ 사유를 반드시 입력해주세요.");
         }
         String rejectMsg = reservationService.rejectReservation(target.getReservationId(), reason);
         System.out.println(">> " + rejectMsg);
@@ -137,11 +138,12 @@ public class ManagerReservationView {
 
     Reservation target = list.get(index - 1);
 
-    System.out.print("강제 취소 사유를 입력하세요: ");
-    String reason = scanner.nextLine().trim();
-    if (reason.isEmpty()) {
-      System.out.println("강제 취소 사유는 필수입니다.");
-      return;
+    String reason;
+    while (true) {
+      System.out.print("강제 취소 사유를 입력하세요: ");
+      reason = scanner.nextLine().trim();
+      if (!reason.isEmpty()) break;
+      System.out.println("  ※ 사유를 반드시 입력해주세요.");
     }
 
     System.out.print("정말 강제 취소하시겠습니까? (Y/N): ");

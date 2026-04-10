@@ -123,6 +123,10 @@ CREATE TABLE IF NOT EXISTS reservation (
                         COMMENT 'FACILITY | EQUIPMENT',
     approved_at     DATETIME        NULL,
     PRIMARY KEY (reservation_id),
+    CONSTRAINT chk_reason_required CHECK (
+        status NOT IN ('거절', '취소', '반려', '강제취소')
+        OR (reason IS NOT NULL AND reason <> '')
+    ),
     CONSTRAINT fk_reservation_period    FOREIGN KEY (period_id)
         REFERENCES period (period_id),
     CONSTRAINT fk_reservation_user      FOREIGN KEY (user_id)
