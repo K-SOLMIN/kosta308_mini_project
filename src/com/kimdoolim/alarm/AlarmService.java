@@ -218,24 +218,26 @@ public class AlarmService {
     }
 
     public void sendAndSaveAlarm(int receiverId, String content, String type) {
-        // 1. DB 저장
-        boolean isSaved = saveAlarmToDb(receiverId, content, type);
+        // 1. 소켓 여부 먼저 확인 → isRead 결정
+        PrintWriter receiverSocket = SocketSession.getClientMap().get(receiverId);
+        boolean isOnline = receiverSocket != null;
+
+        // 2. DB 저장 (온라인이면 isread=true, 오프라인이면 isread=false)
+        boolean isSaved = saveAlarmToDb(receiverId, content, type, isOnline);
 
         if (isSaved) {
-            // 2. 소켓 전송 - 해당 유저가 온라인이면 전송
-            PrintWriter receiverSocket = SocketSession.getClientMap().get(receiverId);
-            if (receiverSocket != null) {
+            if (isOnline) {
                 receiverSocket.println(content);
-                System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
+                System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송 (isread=true)");
             } else {
-                System.out.println("⚠️ [오프라인] User " + receiverId + "은 오프라인입니다. DB에만 저장됨");
+                System.out.println("⚠️ [오프라인] User " + receiverId + "은 오프라인입니다. DB에만 저장됨 (isread=false)");
             }
         } else {
             System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
         }
     }
 
-    public boolean saveAlarmToDb(int receiverId, String content, String type) {
+    public boolean saveAlarmToDb(int receiverId, String content, String type, boolean isRead) {
         PreparedStatement pstmt = null;
         Connection conn = mysql.getConnection();
         boolean result = false;
@@ -249,7 +251,7 @@ public class AlarmService {
             pstmt.setString(2, type);
             pstmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
             pstmt.setString(4, content);
-            pstmt.setString(5, "false");
+            pstmt.setString(5, isRead ? "true" : "false");
 
             pstmt.executeUpdate();
             mysql.commit(conn);

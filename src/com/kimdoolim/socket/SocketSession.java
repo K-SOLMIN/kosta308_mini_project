@@ -154,7 +154,7 @@ public class SocketSession extends Thread{
             // 5. 발송 및 저장 로직
             if (managerOut != null) {
                 managerOut.println(msg);                          // 소켓 전송만
-                alarmService.saveAlarmToDb(managerId, msg, "예약요청"); // DB저장만
+                alarmService.saveAlarmToDb(managerId, msg, "예약요청", true); // 소켓 전송됐으므로 isread=true
                 System.out.println("📧 [매니저 알림] 예약 " + resId + " (" + targetName + ") -> 매니저 " + managerId + " 전송 완료");
             } else {
                 alarmService.sendAndSaveAlarm(managerId, msg, "예약요청"); // 오프라인이면 DB저장만
