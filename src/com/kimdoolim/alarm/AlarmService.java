@@ -270,7 +270,7 @@ public class AlarmService {
     }
 
     public int getUnreadAlarmCount(int userId) {
-        String sql = "SELECT COUNT(*) FROM alarm WHERE receiver_id = ? AND isread = 'FALSE'";
+        String sql = "SELECT COUNT(*) FROM alarm WHERE receiver_id = ? AND isread = 'false'";
         try (Connection conn = MySql.getMySql().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
@@ -285,7 +285,7 @@ public class AlarmService {
 
     public List<Alarm> getMyAlarms(int userId) {
         List<Alarm> list = new ArrayList<>();
-        String sql = "SELECT * FROM alarm WHERE receiver_id = ? AND isread = 'FALSE' ORDER BY generate_date DESC";
+        String sql = "SELECT * FROM alarm WHERE receiver_id = ? AND isread = 'false' ORDER BY generate_date DESC";
         try (Connection conn = MySql.getMySql().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
@@ -310,7 +310,7 @@ public class AlarmService {
     }
 
     public void markAllAlarmsAsRead(int userId) {
-        String sql = "UPDATE alarm SET isread = 'TRUE', readdate = CURDATE() WHERE receiver_id = ? AND isread = 'FALSE'";
+        String sql = "UPDATE alarm SET isread = 'true', readdate = CURDATE() WHERE receiver_id = ? AND isread = 'false'";
         try (Connection conn = MySql.getMySql().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
