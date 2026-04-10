@@ -63,12 +63,12 @@ public class BlockScheduleView {
     }
 
     System.out.println("\n[교시별 차단 목록]");
-    // ID(4) 유형(8) 날짜/요일(22) 교시(8) 적용대상(12) 사유
-    String sep = "─".repeat(70);
+    // ID(4) 유형(8) 날짜/요일(30) 교시(8) 적용대상(12) 사유
+    String sep = "─".repeat(78);
     System.out.println(sep);
     System.out.println(
         fit("ID", 4) + " " + fit("유형", 8) + " " +
-        fit("날짜/요일", 22) + " " + fit("교시", 8) + " " +
+        fit("날짜/요일", 30) + " " + fit("교시", 8) + " " +
         fit("적용대상", 12) + " " + "사유");
     System.out.println(sep);
 
@@ -88,7 +88,7 @@ public class BlockScheduleView {
 
       System.out.println(
           fit(m.get("id").toString(), 4) + " " + fit(type, 8) + " " +
-          fit(dateInfo, 22) + " " + fit(m.get("periodName").toString(), 8) + " " +
+          fit(dateInfo, 30) + " " + fit(m.get("periodName").toString(), 8) + " " +
           fit(target, 12) + " " + m.get("desc"));
     }
     System.out.println(sep);
