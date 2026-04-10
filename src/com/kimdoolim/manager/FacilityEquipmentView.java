@@ -1,19 +1,16 @@
 package com.kimdoolim.manager;
 
 import com.kimdoolim.common.AppScanner;
-import static com.kimdoolim.common.AppScanner.fit;
 import com.kimdoolim.common.Auth;
-import com.kimdoolim.dto.Equipment;
-import com.kimdoolim.dto.EquipmentDetail;
-import com.kimdoolim.dto.Facility;
-import com.kimdoolim.dto.Permission;
-import com.kimdoolim.dto.User;
+import com.kimdoolim.dto.*;
 import com.kimdoolim.service.FacilityEquipmentService;
 import com.kimdoolim.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import static com.kimdoolim.common.AppScanner.fit;
 
 public class FacilityEquipmentView {
 
@@ -134,7 +131,14 @@ public class FacilityEquipmentView {
   private void printFacilityTable() {
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
-    if (list.isEmpty()) { System.out.println("등록된 시설이 없습니다."); return; }
+    if (list.isEmpty()) {
+      if(isAdmin) {
+        System.out.println("등록된 시설이 없습니다.");
+      } else {
+        System.out.println("관리중인 시설이 없습니다.");
+      }
+      return;
+    }
 
     String div = isAdmin ? "─".repeat(63) : "─".repeat(52);
     System.out.println(div);
@@ -179,7 +183,13 @@ public class FacilityEquipmentView {
   private void printEquipmentTable() {
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
-    if (list.isEmpty()) { System.out.println("등록된 비품이 없습니다."); return; }
+    if (list.isEmpty()) {
+      if(isAdmin) {
+        System.out.println("등록된 비품이 없습니다.");
+      } else {
+        System.out.println("관리중인 비품이 없습니다.");
+      }
+    }
 
     String div = isAdmin ? "─".repeat(93) : "─".repeat(82);
     System.out.println(div);
