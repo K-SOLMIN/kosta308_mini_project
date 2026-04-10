@@ -184,11 +184,8 @@ public class FacilityEquipmentView {
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
     if (list.isEmpty()) {
-      if(isAdmin) {
-        System.out.println("등록된 비품이 없습니다.");
-      } else {
-        System.out.println("관리중인 비품이 없습니다.");
-      }
+      System.out.println(isAdmin ? "등록된 비품이 없습니다." : "관리중인 비품이 없습니다.");
+      return;
     }
 
     String div = isAdmin ? "─".repeat(93) : "─".repeat(82);
