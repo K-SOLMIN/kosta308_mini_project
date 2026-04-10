@@ -7,8 +7,7 @@ import java.sql.SQLException;
 public class MySql implements Database {
 
     // 한글 깨짐 방지를 위해 UTF-8 인코딩 설정 추가
-    private static final String URL =
-        "jdbc:mysql://localhost:3307/kimdoolim";
+    private static final String URL = "jdbc:mysql://localhost:3307/kimdoolim?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul";
 
     private static final String USER     = "root";
     private static final String PASSWORD = "1111";
