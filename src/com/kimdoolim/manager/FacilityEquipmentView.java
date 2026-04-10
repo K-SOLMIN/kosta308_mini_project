@@ -28,14 +28,11 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   public void facilityEquipmentMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("      시설/비품 관리 메뉴      ");
-      System.out.println("=============================");
-      System.out.println(" 1. 시설 관리");
-      System.out.println(" 2. 비품 관리");
-      System.out.println(" 3. 교시별 예약 차단 관리");
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      System.out.println("                       [ 시설/비품 관리 ]");
+      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println(" 1.시설 관리 || 2.비품 관리 || 3.교시별 예약 차단 관리 || 0.뒤로 가기");
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
@@ -55,18 +52,15 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   private void facilityMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("         시설 관리 메뉴        ");
-      System.out.println("=============================");
-      System.out.println(" 1. 시설 목록 조회");
-      System.out.println(" 2. 시설 등록");
-      System.out.println(" 3. 시설 상태 수정");
-      System.out.println(" 4. 시설 삭제");
+      System.out.println("\n────────────────────────────────────────────────────────────────────────────────────────────");
+      System.out.println("                         [ 시설 관리 ]");
+      System.out.println("────────────────────────────────────────────────────────────────────────────────────────────");
       if (Auth.getUserInfo().getPermission() == Permission.ADMIN) {
-        System.out.println(" 5. 담당자 재배정");
+        System.out.println(" 1.시설 목록 조회 || 2.시설 등록 || 3.시설 상태 수정 || 4.시설 삭제 || 5.담당자 재배정 || 0.뒤로 가기");
+      } else {
+        System.out.println(" 1.시설 목록 조회 || 2.시설 등록 || 3.시설 상태 수정 || 4.시설 삭제 || 0.뒤로 가기");
       }
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
@@ -91,18 +85,15 @@ public class FacilityEquipmentView {
   // ─────────────────────────────────────────────────────
   private void equipmentMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("         비품 관리 메뉴        ");
-      System.out.println("=============================");
-      System.out.println(" 1. 비품 목록 조회");
-      System.out.println(" 2. 비품 등록");
-      System.out.println(" 3. 비품 상태 수정");
-      System.out.println(" 4. 비품 삭제");
+      System.out.println("\n───────────────────────────────────────────────────────────────────────────────────────────────");
+      System.out.println("                         [ 비품 관리 ]");
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       if (Auth.getUserInfo().getPermission() == Permission.ADMIN) {
-        System.out.println(" 5. 담당자 재배정");
+        System.out.println(" 1.비품 목록 조회 || 2.비품 등록 || 3.비품 상태 수정 || 4.비품 삭제 || 5.담당자 재배정 || 0.뒤로 가기");
+      } else {
+        System.out.println(" 1.비품 목록 조회 || 2.비품 등록 || 3.비품 상태 수정 || 4.비품 삭제 || 0.뒤로 가기");
       }
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();

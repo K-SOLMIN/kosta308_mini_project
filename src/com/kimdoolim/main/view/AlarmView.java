@@ -20,9 +20,8 @@ public class AlarmView {
         List<Alarm> alarms = alarmService.getMyAlarms(userId);
         alarmService.markAllAlarmsAsRead(userId);
 
-        System.out.println("=================================================================");
-        System.out.println("                       안읽은 알림 목록                            ");
-        System.out.println("=================================================================");
+        System.out.println("\n[ 알림 목록 ]");
+        System.out.println("─".repeat(50));
 
         if (alarms.isEmpty()) {
             System.out.println("  읽지 않은 알림이 없습니다.");
@@ -33,7 +32,7 @@ public class AlarmView {
             }
         }
 
-        System.out.println("=================================================================");
+        System.out.println("─".repeat(50));
         System.out.print("엔터를 누르면 메인 메뉴로 돌아갑니다.");
         AppScanner.getScanner().nextLine();
     }

@@ -16,212 +16,136 @@ public class MainView {
     private final Scanner scanner = AppScanner.getScanner();
     private final AlarmService alarmService = AlarmService.getAlarmService();
 
+    private static final int W = 80;
+    private static final String BORDER = "=".repeat(W);
+
+    /** 한글(2칸) / 영문(1칸) 기준으로 가운데 정렬 */
+    private static String center(String text) {
+        int dw = 0;
+        for (char c : text.toCharArray())
+            dw += (c >= '\uAC00' && c <= '\uD7A3') ? 2 : 1;
+        int pad = Math.max(0, (W - dw) / 2);
+        return " ".repeat(pad) + text;
+    }
+
     // ─────────────────────────────────────────────────────
     // 비활성 사용자 메뉴 (휴직/전근)
-    // 예약 내역 조회 + 마이페이지만 허용
     // ─────────────────────────────────────────────────────
     public void restrictedUserView() {
         while (true) {
-            System.out.println("=================================================================");
-            System.out.println("                     제한된 메뉴 (비활성 계정)                     ");
-            System.out.println("=================================================================");
-            System.out.println("  1. 예약 내역 확인 || 2. 마이페이지 || 0. 종료 ");
-            System.out.println("=================================================================");
-            System.out.print("메뉴 선택 : ");
+            System.out.println("\n" + BORDER);
+            System.out.println(center("제한된 메뉴 (비활성 계정)"));
+            System.out.println(BORDER);
+            System.out.println(" 1.예약 내역 확인 || 2.마이페이지 || 0.종료");
+            System.out.println(BORDER);
+            System.out.print("메뉴 선택: ");
 
-            int choice = readInt();
-
-            switch (choice) {
-                case 1:
-                    System.out.println(">> [예약 내역 확인]으로 이동합니다.");
-                    new ReservationView().reservationHistoryMenu();
-                    break;
-                case 2:
-                    System.out.println(">> [마이페이지]로 이동합니다.");
-                    new MyPageView().myPageMenu();
-                    break;
+            switch (readInt()) {
+                case 1: new ReservationView().reservationHistoryMenu(); break;
+                case 2: new MyPageView().myPageMenu(); break;
                 case 0:
-                    System.out.println("[프로그램을 종료합니다.]");
+                    System.out.println("프로그램을 종료합니다.");
                     return;
-                default:
-                    System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+                default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
             }
         }
     }
 
     // ─────────────────────────────────────────────────────
-    // 일반 사용자 메뉴
+    // 일반 사용자 메뉴  (1~4번 공통)
     // ─────────────────────────────────────────────────────
     public void userMainView() {
         while (true) {
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
-            String alarmLabel = "알림조회(" + unread + ")";
-            System.out.println("=================================================================");
-            System.out.println("                          사용자 메인 메뉴                          ");
-            System.out.println("=================================================================");
-            System.out.println("  1. 예약하기 || 2. 마이페이지 || 3. 예약 내역 확인 || 4. " + alarmLabel + " || 0. 종료 ");
-            System.out.println("=================================================================");
-            System.out.print("메뉴 선택 : ");
 
-            int choice = readInt();
+            System.out.println("\n" + BORDER);
+            System.out.println(center("사용자 메인 메뉴"));
+            System.out.println(BORDER);
+            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
+            System.out.println(BORDER);
+            System.out.print("메뉴 선택: ");
 
-            switch (choice) {
-                case 1:
-                    System.out.println(">> [예약 하기]로 이동합니다.");
-                    new ReservationView().reservationMenu();
-                    break;
-                case 2:
-                    System.out.println(">> [마이페이지]로 이동합니다.");
-                    new MyPageView().myPageMenu();
-                    break;
-                case 3:
-                    System.out.println(">> [예약 내역 확인]으로 이동합니다.");
-                    new ReservationView().reservationHistoryMenu();
-                    break;
-                case 4:
-                    System.out.println(">> [알림조회]로 이동합니다.");
-                    new AlarmView().alarmMenu();
-                    break;
+            switch (readInt()) {
+                case 1: new ReservationView().reservationMenu(); break;
+                case 2: new ReservationView().reservationHistoryMenu(); break;
+                case 3: new MyPageView().myPageMenu(); break;
+                case 4: new AlarmView().alarmMenu(); break;
                 case 0:
-                    System.out.println("[프로그램을 종료합니다.]");
-                    try {
-                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
-                            ClientMain.socket.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return;
-                default:
-                    System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+                    System.out.println("프로그램을 종료합니다.");
+                    closeSocket(); return;
+                default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
             }
         }
     }
 
     // ─────────────────────────────────────────────────────
-    // 중간 관리자 메뉴
-    // - 예약 관리 (담당 시설/비품만)
-    // - 시설/비품 관리
-    // - 마이페이지
-    // - 예약하기
+    // 중간 관리자 메뉴  (1~4번 공통 + 5~6번 관리자 전용)
     // ─────────────────────────────────────────────────────
     public void middleAdminMainView() {
         while (true) {
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
-            String alarmLabel = "알림조회(" + unread + ")";
-            System.out.println("========================================================================");
-            System.out.println("                           중간 관리자 메인 메뉴                          ");
-            System.out.println("========================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 마이페이지 || 4. 예약하기 || 5. 예약 내역 확인 || 6. " + alarmLabel + " || 0. 종료");
-            System.out.println("========================================================================");
-            System.out.print("메뉴 선택 : ");
 
-            int choice = readInt();
+            System.out.println("\n" + BORDER);
+            System.out.println(center("중간 관리자 메인 메뉴"));
+            System.out.println(BORDER);
+            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
+            System.out.println(" 5.예약 관리 || 6.시설/비품 관리");
+            System.out.println(BORDER);
+            System.out.print("메뉴 선택: ");
 
-            switch (choice) {
-                case 1:
-                    System.out.println(">> [예약 관리] 메뉴로 이동합니다.");
-                    new ManagerReservationView().managerReservationMenu();
-                    break;
-                case 2:
-                    System.out.println(">> [시설/비품 관리] 메뉴로 이동합니다.");
-                    new FacilityEquipmentView().facilityEquipmentMenu();
-                    break;
-                case 3:
-                    System.out.println(">> [마이페이지]로 이동합니다.");
-                    new MyPageView().myPageMenu();
-                    break;
-                case 4:
-                    System.out.println(">> [예약 하기]로 이동합니다.");
-                    new ReservationView().reservationMenu();
-                    break;
-                case 5:
-                    System.out.println(">> [예약 내역 확인]으로 이동합니다.");
-                    new ReservationView().reservationHistoryMenu();
-                    break;
-                case 6:
-                    System.out.println(">> [알림조회]로 이동합니다.");
-                    new AlarmView().alarmMenu();
-                    break;
+            switch (readInt()) {
+                case 1: new ReservationView().reservationMenu(); break;
+                case 2: new ReservationView().reservationHistoryMenu(); break;
+                case 3: new MyPageView().myPageMenu(); break;
+                case 4: new AlarmView().alarmMenu(); break;
+                case 5: new ManagerReservationView().managerReservationMenu(); break;
+                case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
-                    try {
-                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
-                            ClientMain.socket.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return;
-                default:
-                    System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+                    closeSocket(); return;
+                default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
             }
         }
     }
 
     // ─────────────────────────────────────────────────────
-    // 상위 관리자 메뉴
-    // - 예약 관리 (전체)
-    // - 시설/비품 관리
-    // - 사용자 관리
-    // - 마이페이지
-    // - 예약하기
+    // 상위 관리자 메뉴  (1~4번 공통 + 5~8번 관리자 전용)
     // ─────────────────────────────────────────────────────
     public void adminMainView() {
         while (true) {
             int unread = alarmService.getUnreadAlarmCount(Auth.getUserInfo().getUserId());
-            String alarmLabel = "알림조회(" + unread + ")";
-            System.out.println("============================================================================================");
-            System.out.println("                                     상위 관리자 메인 메뉴                                     ");
-            System.out.println("============================================================================================");
-            System.out.println(" 1. 예약 관리 || 2. 시설/비품 관리 || 3. 사용자 관리 || 4. 마이페이지 || 5. 예약하기 || 6. 제한기간 관리 || 7. " + alarmLabel + " || 0. 로그아웃");
-            System.out.println("============================================================================================");
-            System.out.print("메뉴 선택 : ");
 
-            int choice = readInt();
+            System.out.println("\n" + BORDER);
+            System.out.println(center("상위 관리자 메인 메뉴"));
+            System.out.println(BORDER);
+            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
+            System.out.println(" 5.예약 관리 || 6.시설/비품 관리 || 7.사용자 관리 || 8.제한기간 관리");
+            System.out.println(BORDER);
+            System.out.print("메뉴 선택: ");
 
-            switch (choice) {
-                case 1:
-                    System.out.println(">> [예약 관리] 메뉴로 이동합니다.");
-                    new ManagerReservationView().managerReservationMenu();
-                    break;
-                case 2:
-                    System.out.println(">> [시설/비품 관리] 메뉴로 이동합니다.");
-                    new FacilityEquipmentView().facilityEquipmentMenu();
-                    break;
-                case 3:
-                    System.out.println(">> [사용자 관리] 메뉴로 이동합니다.");
-                    new UserManageView().userManageMenu();
-                    break;
-                case 4:
-                    System.out.println(">> [마이페이지]로 이동합니다.");
-                    new MyPageView().myPageMenu();
-                    break;
-                case 5:
-                    System.out.println(">> [예약 하기]로 이동합니다.");
-                    new ReservationView().reservationMenu();
-                    break;
-                case 6:
-                    System.out.println(">> [제한기간 관리]로 이동합니다.");
-                    new BlockPeriodManageView().blockPeriodManageView();
-                    break;
-                case 7:
-                    System.out.println(">> [알림조회]로 이동합니다.");
-                    new AlarmView().alarmMenu();
-                    break;
+            switch (readInt()) {
+                case 1: new ReservationView().reservationMenu(); break;
+                case 2: new ReservationView().reservationHistoryMenu(); break;
+                case 3: new MyPageView().myPageMenu(); break;
+                case 4: new AlarmView().alarmMenu(); break;
+                case 5: new ManagerReservationView().managerReservationMenu(); break;
+                case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;
+                case 7: new UserManageView().userManageMenu(); break;
+                case 8: new BlockPeriodManageView().blockPeriodManageView(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
-                    try {
-                        if (ClientMain.socket != null && !ClientMain.socket.isClosed()) {
-                            ClientMain.socket.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return;
-                default:
-                    System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
+                    closeSocket(); return;
+                default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
             }
+        }
+    }
+
+    private void closeSocket() {
+        try {
+            if (ClientMain.socket != null && !ClientMain.socket.isClosed())
+                ClientMain.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -9,9 +9,9 @@ public class LoginView {
         Scanner scanner = new Scanner(System.in);
         int result = 0;
 
-        System.out.println("=============================");
-        System.out.println("         로그인 화면           ");
-        System.out.println("=============================");
+        System.out.println("================================================================================");
+        System.out.println("                                   로  그  인");
+        System.out.println("================================================================================");
 
         while(true) {
             System.out.print("아이디: ");

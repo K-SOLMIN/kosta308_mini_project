@@ -15,18 +15,11 @@ public class UserManageView {
 
   public void userManageMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("        사용자 관리 메뉴        ");
-      System.out.println("=============================");
-      System.out.println(" 1. 사용자 목록 조회");
-      System.out.println(" 2. 사용자 등록");
-      System.out.println(" 3. 휴직 처리");
-      System.out.println(" 4. 복직 처리");
-      System.out.println(" 5. 전근 처리");
-      System.out.println(" 6. 전근 승인 (새 학교 사용자 활성화)");
-      System.out.println(" 7. 권한 변경 (일반 ↔ 중간 관리자)");
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      System.out.println("                        [ 사용자 관리 ]");
+      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println(" 1.목록 조회 || 2.사용자 등록 || 3.휴직 || 4.복직 || 5.전근 || 6.전근 승인 || 7.권한 변경 || 0.뒤로 가기");
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();

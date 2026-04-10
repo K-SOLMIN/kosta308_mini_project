@@ -23,14 +23,11 @@ public class ReservationView {
   // ─────────────────────────────────────────────────────
   public void reservationMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("         예약 메뉴            ");
-      System.out.println("=============================");
-      System.out.println(" 1. 시설 예약 신청");
-      System.out.println(" 2. 비품 예약 신청");
-      System.out.println(" 3. 예약 취소");
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      System.out.println("                         [ 예약 메뉴 ]");
+      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println(" 1.시설 예약 신청 || 2.비품 예약 신청 || 3.예약 취소 || 0.뒤로 가기");
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
@@ -50,13 +47,11 @@ public class ReservationView {
   // ─────────────────────────────────────────────────────
   public void reservationHistoryMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("      예약 내역 확인 메뉴      ");
-      System.out.println("=============================");
-      System.out.println(" 1. 내 예약 목록 보기");
-      System.out.println(" 2. 반납 신청");
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      System.out.println("                       [ 예약 내역 확인 ]");
+      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println(" 1.내 예약 목록 보기 || 2.반납 신청 || 0.뒤로 가기");
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
@@ -89,16 +84,18 @@ public class ReservationView {
     // start_time 기준 오름차순 정렬
     allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
 
-    String div = "─".repeat(74);
+    // 컬럼 고정폭: 번호(4) 신청일시(12) 예약날짜(12) 교시(10) 구분(4) 시설/비품명(16) 상태(14)
+    // 구분자 "  " × 6 = 12  →  합계 84
+    String div = "─".repeat(84);
     System.out.println(div);
     System.out.println(
-        pad("번호", 4) + "  " +
-            pad("예약신청일시", 16) + "  " +
-            pad("예약날짜", 12) + "  " +
-            pad("교시", 10) + "  " +
-            pad("구분", 6) + "  " +
-            pad("시설/비품명", 14) + "  " +
-            "상태"
+        fit("번호",      4) + "  " +
+        fit("신청일시",  12) + "  " +
+        fit("예약날짜",  12) + "  " +
+        fit("교시",      10) + "  " +
+        fit("구분",       4) + "  " +
+        fit("시설/비품명", 16) + "  " +
+        fit("상태",      14)
     );
     System.out.println(div);
 
@@ -127,23 +124,22 @@ public class ReservationView {
             .findFirst()
             .orElse(currentEnd);
         LocalDateTime deadline = r.getReservationDate().atTime(deadlineTime);
-        statusDisplay = r.getReturnedAt().isAfter(deadline)
-            ? "반납완료(반납지연)" : "반납완료";
+        statusDisplay = r.getReturnedAt().isAfter(deadline) ? "반납완료(지연)" : "반납완료";
       } else {
         statusDisplay = r.getStatus();
       }
 
       System.out.println(
-          pad(String.valueOf(i + 1), 4) + "  " +
-              pad(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 16) + "  " +
-              pad(r.getReservationDate().toString(), 12) + "  " +
-              pad(r.getPeriod().getPeriodName(), 10) + "  " +
-              pad(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 6) + "  " +
-              pad(targetName, 14) + "  " +
-              statusDisplay
+          fit(String.valueOf(i + 1), 4) + "  " +
+          fit(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 12) + "  " +
+          fit(r.getReservationDate().toString(), 12) + "  " +
+          fit(r.getPeriod().getPeriodName(), 10) + "  " +
+          fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + "  " +
+          fit(targetName, 16) + "  " +
+          fit(statusDisplay, 14)
       );
     }
-    System.out.println("─".repeat(74));
+    System.out.println(div);
   }
 
   // ─────────────────────────────────────────────────────
@@ -474,17 +470,28 @@ public class ReservationView {
   // ─────────────────────────────────────────────────────
   private int displayWidth(String s) {
     int width = 0;
-    for (char c : s.toCharArray()) {
-      width += (c >= '\uAC00' && c <= '\uD7A3') || (c >= '\u3000' && c <= '\u9FFF') ? 2 : 1;
-    }
+    for (char c : s.toCharArray())
+      width += (c >= '\uAC00' && c <= '\uD7A3') ? 2 : 1;
     return width;
   }
 
+  /** 패딩만 (마지막 컬럼 등 자르기 불필요한 경우) */
   private String pad(String s, int width) {
     int diff = width - displayWidth(s);
     if (diff <= 0) return s;
     StringBuilder sb = new StringBuilder(s);
     for (int i = 0; i < diff; i++) sb.append(' ');
     return sb.toString();
+  }
+
+  /** 패딩 + 자르기 → 항상 정확히 width 칸 차지 */
+  private String fit(String s, int width) {
+    int dw = 0, i = 0;
+    for (; i < s.length(); i++) {
+      int cw = (s.charAt(i) >= '\uAC00' && s.charAt(i) <= '\uD7A3') ? 2 : 1;
+      if (dw + cw > width) break;
+      dw += cw;
+    }
+    return s.substring(0, i) + " ".repeat(width - dw);
   }
 }

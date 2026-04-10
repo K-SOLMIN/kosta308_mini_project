@@ -27,15 +27,11 @@ public class BlockScheduleView {
 
   public void blockScheduleMenu() {
     while (true) {
-      System.out.println("\n=============================");
-      System.out.println("    교시별 예약 차단 관리 메뉴   ");
-      System.out.println("=============================");
-      System.out.println(" 1. 차단 목록 조회");
-      System.out.println(" 2. 특정 날짜 + 교시 차단 등록");
-      System.out.println(" 3. 반복 요일 + 교시 차단 등록");
-      System.out.println(" 4. 차단 삭제");
-      System.out.println(" 0. 뒤로 가기");
-      System.out.println("=============================");
+      System.out.println("\n──────────────────────────────────────────────────────────────────");
+      System.out.println("                    [ 교시별 예약 차단 관리 ]");
+      System.out.println("──────────────────────────────────────────────────────────────────");
+      System.out.println(" 1.차단 목록 조회 || 2.특정 날짜+교시 차단 || 3.반복 요일+교시 차단 || 4.차단 삭제 || 0.뒤로 가기");
+      System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
       int choice = readInt();
