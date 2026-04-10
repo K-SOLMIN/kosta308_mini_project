@@ -74,7 +74,7 @@ public class Auth {
             db.close(pstmt);
             db.close(conn);
         }
-        System.out.println("loginUser : " + user);
+//        System.out.println("loginUser : " + user);
         return result;
     }
 

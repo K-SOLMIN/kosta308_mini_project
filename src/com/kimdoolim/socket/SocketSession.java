@@ -87,10 +87,10 @@ public class SocketSession extends Thread{
                     } else {
                         System.out.println("⚠️ [취소 실패] 예약 ID " + resId + " 정보를 찾을 수 없습니다.");
                     }
-            } else if (line.startsWith("RETURN_COMPLETE:")) {
-                    long resId = Long.parseLong(line.split(":", 2)[1]);
-                    AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
-                    System.out.println("✅ [반납완료] 예약 ID: " + resId + " 반납알림 + 연체알림 스케줄 취소");
+                } else if (line.startsWith("RETURN_COMPLETE:")) {
+                        long resId = Long.parseLong(line.split(":", 2)[1]);
+                        AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
+                        System.out.println("✅ [반납완료] 예약 ID: " + resId + " 반납알림 + 연체알림 스케줄 취소");
                 } else if (line.contains(":")) {
                     sendingAlarm(line);
 
