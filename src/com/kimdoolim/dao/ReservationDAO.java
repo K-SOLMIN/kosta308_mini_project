@@ -1,18 +1,22 @@
 package com.kimdoolim.dao;
 
+import com.kimdoolim.alarm.AlarmSendingManager;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
+import com.kimdoolim.main.ClientMain;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ReservationDAO {
 
   private final Database db = MySql.getMySql();
+  private final AlarmSendingManager sendingManager = AlarmSendingManager.getAlarmSendingManager();
 
   // ─────────────────────────────────────────────────────
   // 1. 교시 전체 조회
@@ -53,19 +57,22 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT facility_id, location, name, max_capacity, status " +
+    String sql = "SELECT facility_id, location, name, max_capacity, status, manager_id " +
         "FROM facility WHERE is_delete = 'false' AND status = '정상'";
 
     try {
       pstmt = conn.prepareStatement(sql);
       rs = pstmt.executeQuery();
       while (rs.next()) {
+        long managerId = rs.getLong("manager_id");
+        User manager = rs.wasNull() ? null : User.builder().userId((int) managerId).build();
         list.add(Facility.builder()
             .facilityId(rs.getLong("facility_id"))
             .location(rs.getString("location"))
             .name(rs.getString("name"))
             .maxCapacity(rs.getInt("max_capacity"))
             .status(rs.getString("status"))
+            .user(manager)
             .build());
       }
     } catch (SQLException e) {
@@ -85,18 +92,26 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT equipment_id, name, location, status " +
-        "FROM equipment WHERE check_delete = 'false' AND status = '정상'";
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.status, e.manager_id, " +
+        "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
+        "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
+        "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
+        "       ) AS status_summary " +
+        "FROM equipment e WHERE e.check_delete = 'false' AND e.status = '정상'";
 
     try {
       pstmt = conn.prepareStatement(sql);
       rs = pstmt.executeQuery();
       while (rs.next()) {
+        long managerId = rs.getLong("manager_id");
+        User manager = rs.wasNull() ? null : User.builder().userId((int) managerId).build();
         list.add(Equipment.builder()
             .equipmentId(rs.getLong("equipment_id"))
             .name(rs.getString("name"))
             .location(rs.getString("location"))
             .status(rs.getString("status"))
+            .statusSummary(rs.getString("status_summary"))
+            .user(manager)
             .build());
       }
     } catch (SQLException e) {
@@ -152,34 +167,58 @@ public class ReservationDAO {
   public int saveReservation(Reservation reservation) {
     Connection conn = db.getConnection();
     PreparedStatement pstmt = null;
-    int result = 0;
+    ResultSet rs = null;
+    int result = 0; // 기존 return값 유지
+    int generatedId = -1; // 소켓 전송용 임시 변수
 
     String sql = "INSERT INTO reservation " +
-        "(period_id, user_id, facility_id, equipment_id, purpose, " +
-        " created_at, reservation_date, status, real_use, target_type) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', 'false', ?)";
+            "(period_id, user_id, facility_id, equipment_id, purpose, " +
+            " created_at, reservation_date, status, real_use, target_type) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, '대기', 'false', ?)";
 
     try {
-      pstmt = conn.prepareStatement(sql);
+      // PK 반환 옵션 추가
+      pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
       pstmt.setInt(1, reservation.getPeriod().getPeriodId());
       pstmt.setInt(2, reservation.getUser().getUserId());
+
       if (reservation.getFacility() != null) pstmt.setLong(3, reservation.getFacility().getFacilityId());
       else pstmt.setNull(3, Types.BIGINT);
+
       if (reservation.getEquipment() != null) pstmt.setLong(4, reservation.getEquipment().getEquipmentId());
       else pstmt.setNull(4, Types.BIGINT);
+
       pstmt.setString(5, reservation.getPurpose());
       pstmt.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
       pstmt.setDate(7, Date.valueOf(reservation.getReservationDate()));
       pstmt.setString(8, reservation.getTargetType());
-      result = pstmt.executeUpdate();
-      db.commit(conn);
+
+      result = pstmt.executeUpdate(); // 실행 결과(1 또는 0) 저장
+
+      if (result > 0) {
+        // 실행 성공 시 PK 가져오기
+        rs = pstmt.getGeneratedKeys();
+        if (rs.next()) {
+          generatedId = rs.getInt(1);
+        }
+        db.commit(conn);
+      }
     } catch (SQLException e) {
       db.rollback(conn);
       System.out.println("예약 저장 실패: " + e.getMessage());
     } finally {
-      db.close(pstmt); db.close(conn);
+      db.close(rs);
+      db.close(pstmt);
+      db.close(conn);
     }
-    return result;
+
+    // 소켓 전송 (PK가 정상적으로 추출되었을 때만)
+    if (generatedId != -1) {
+      sendingManager.sendingTextToSocketServer("예약요청", generatedId);
+    }
+
+    return result; // 기존 규격 그대로 반환!
   }
 
   // ─────────────────────────────────────────────────────
@@ -191,17 +230,19 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
         "       f.name AS facility_name, " +
-        "       e.name AS equipment_name " +
+        "       e.name AS equipment_name, " +
+        "       rr.created_at AS returned_at " +
         "FROM reservation r " +
         "JOIN period p ON r.period_id = p.period_id " +
         "JOIN user u ON r.user_id = u.user_id " +
         "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        "LEFT JOIN return_request rr ON r.reservation_id = rr.reservation_id " +
         "WHERE r.user_id = ? " +
         "ORDER BY r.reservation_date DESC, r.created_at DESC";
 
@@ -219,7 +260,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 7. 반납 가능한 예약 목록 조회 (status = '승인')
+  // 7. 반납 가능한 예약 목록 조회 (status = '승인', 사용 시작 시간 이후)
   // ─────────────────────────────────────────────────────
   public List<Reservation> findReturnableReservations(int userId) {
     List<Reservation> list = new ArrayList<>();
@@ -227,6 +268,7 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
+    // 시간 필터는 MySQL CURTIME() 대신 Java LocalTime으로 처리 (시간대 오차 방지)
     String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
@@ -245,7 +287,19 @@ public class ReservationDAO {
       pstmt = conn.prepareStatement(sql);
       pstmt.setInt(1, userId);
       rs = pstmt.executeQuery();
-      list = parseReservationResultSet(rs, userId);
+      List<Reservation> all = parseReservationResultSet(rs, userId);
+
+      LocalDate today = LocalDate.now();
+      LocalTime now = LocalTime.now();
+
+      for (Reservation r : all) {
+        LocalDate resDate = r.getReservationDate();
+        LocalTime startTime = r.getPeriod().getStartTime();
+        // 과거 날짜이거나, 오늘이면서 시작 시간이 지났으면 반납 가능
+        if (resDate.isBefore(today) || (resDate.isEqual(today) && !now.isBefore(startTime))) {
+          list.add(r);
+        }
+      }
     } catch (SQLException e) {
       System.out.println("반납 가능 목록 조회 실패: " + e.getMessage());
     } finally {
@@ -295,7 +349,7 @@ public class ReservationDAO {
         ? "AND (f.manager_id = ? OR e.manager_id = ?) "
         : "";
 
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
@@ -308,7 +362,7 @@ public class ReservationDAO {
         "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
         "WHERE r.status = " + status + " " +
         managerCondition +
-        "ORDER BY r.reservation_date DESC, r.created_at DESC";
+        "ORDER BY r.created_at ASC";
 
     try {
       pstmt = conn.prepareStatement(sql);
@@ -349,6 +403,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":APPROVE");
+
     return result;
   }
 
@@ -361,8 +418,7 @@ public class ReservationDAO {
     int result = 0;
 
     String sql = "UPDATE reservation " +
-        "SET status = '거절', " +
-        "    purpose = CONCAT(purpose, ' [반려사유: ', ?, ']') " +
+        "SET status = '거절', reason = ? " +
         "WHERE reservation_id = ? AND status = '대기'";
 
     try {
@@ -377,6 +433,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":REJECT");
+
     return result;
   }
 
@@ -389,8 +448,7 @@ public class ReservationDAO {
     int result = 0;
 
     String sql = "UPDATE reservation " +
-        "SET status = '취소', " +
-        "    purpose = CONCAT(purpose, ' [강제취소사유: ', ?, ']') " +
+        "SET status = '취소', reason = ? " +
         "WHERE reservation_id = ? AND status = '승인'";
 
     try {
@@ -405,6 +463,9 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("취소", reservationId, "ADMIN");
+
     return result;
   }
 
@@ -416,12 +477,11 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     int result = 0;
 
-    String insertSql = "INSERT INTO return_request (reservation_id, condition, status, created_at) " +
+    String insertSql = "INSERT INTO return_request (reservation_id, `condition`, status, created_at) " +
         "VALUES (?, ?, '반납완료', ?)";
     String updateSql = "UPDATE reservation SET status = '반납완료' WHERE reservation_id = ?";
 
     try {
-
       pstmt = conn.prepareStatement(insertSql);
       pstmt.setLong(1, reservationId);
       pstmt.setString(2, condition);
@@ -433,13 +493,16 @@ public class ReservationDAO {
       pstmt.setLong(1, reservationId);
       result = pstmt.executeUpdate();
 
-      db.commit(conn);  // 둘 다 성공했을 때만 커밋
+      db.commit(conn);
     } catch (SQLException e) {
-      db.rollback(conn);  // 하나라도 실패하면 둘 다 롤백
+      db.rollback(conn);
       System.out.println("반납 처리 실패: " + e.getMessage());
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("반납완료", reservationId);
+
     return result;
   }
 
@@ -453,7 +516,8 @@ public class ReservationDAO {
 
     String sql = "UPDATE reservation SET status = '취소' " +
         "WHERE reservation_id = ? AND user_id = ? " +
-        "AND status IN ('대기', '승인')";
+        "AND status IN ('대기', '승인') " +
+        "AND CONCAT(reservation_date, ' ', (SELECT start_time FROM period WHERE period_id = reservation.period_id)) >= NOW()";
 
     try {
       pstmt = conn.prepareStatement(sql);
@@ -467,16 +531,19 @@ public class ReservationDAO {
     } finally {
       db.close(pstmt); db.close(conn);
     }
+
+    sendingManager.sendingTextToSocketServer("취소", reservationId, "USER");
+
     return result;
   }
 
   // ─────────────────────────────────────────────────────
   // 17. 제한 기간 체크
-  //     예약 날짜가 block_period 안에 있고,
-  //     해당 시설 or 비품이 block_period_detail에 등록돼 있으면
-  //     제한 사유(description)를 반환, 없으면 null 반환
+  //     - period_id IS NULL  → 종일 제한 (교시 무관)
+  //     - period_id = 해당 교시 → 해당 교시만 제한
   // ─────────────────────────────────────────────────────
-  public String findBlockedReason(LocalDate reservationDate, Long facilityId, Long equipmentId) {
+  public String findBlockedReason(LocalDate reservationDate, int periodId,
+                                  Long facilityId, Long equipmentId) {
     Connection conn = db.getConnection();
     PreparedStatement pstmt = null;
     ResultSet rs = null;
@@ -486,16 +553,18 @@ public class ReservationDAO {
         "FROM block_period bp " +
         "JOIN block_period_detail bpd ON bp.block_period_id = bpd.block_period_id " +
         "WHERE ? BETWEEN bp.block_period_startdate AND bp.block_period_enddate " +
+        "AND (bp.period_id IS NULL OR bp.period_id = ?) " +
         "AND (bpd.facility_id = ? OR bpd.equipment_id = ?) " +
         "LIMIT 1";
 
     try {
       pstmt = conn.prepareStatement(sql);
       pstmt.setDate(1, Date.valueOf(reservationDate));
-      if (facilityId != null) pstmt.setLong(2, facilityId);
-      else pstmt.setNull(2, Types.BIGINT);
-      if (equipmentId != null) pstmt.setLong(3, equipmentId);
+      pstmt.setInt(2, periodId);
+      if (facilityId != null) pstmt.setLong(3, facilityId);
       else pstmt.setNull(3, Types.BIGINT);
+      if (equipmentId != null) pstmt.setLong(4, equipmentId);
+      else pstmt.setNull(4, Types.BIGINT);
 
       rs = pstmt.executeQuery();
       if (rs.next()) {
@@ -544,6 +613,7 @@ public class ReservationDAO {
           .reservationId(rs.getLong("reservation_id"))
           .reservationDate(rs.getDate("reservation_date").toLocalDate())
           .status(rs.getString("status"))
+//          .reason(rs.getString("reason")) query문에 reason 컬럼안가져와서 에러남 query문을 수정하던지 이걸수정하던지 해야함
           .purpose(rs.getString("purpose"))
           .targetType(rs.getString("target_type"))
           .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
@@ -551,8 +621,23 @@ public class ReservationDAO {
           .facility(facility)
           .equipment(equipment)
           .user(user)
+          .returnedAt(hasColumn(rs, "returned_at") && rs.getTimestamp("returned_at") != null
+              ? rs.getTimestamp("returned_at").toLocalDateTime() : null)
           .build());
     }
     return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // ResultSet에 해당 컬럼이 존재하는지 확인하는 헬퍼
+  // returned_at 처럼 일부 쿼리에만 있는 컬럼 안전하게 읽기 위함
+  // ─────────────────────────────────────────────────────
+  private boolean hasColumn(ResultSet rs, String columnName) {
+    try {
+      rs.findColumn(columnName);
+      return true;
+    } catch (SQLException e) {
+      return false;
+    }
   }
 }

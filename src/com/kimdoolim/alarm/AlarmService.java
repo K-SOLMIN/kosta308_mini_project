@@ -3,17 +3,25 @@ package com.kimdoolim.alarm;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
 import com.kimdoolim.dto.*;
+import com.kimdoolim.socket.SocketSession;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.PrintWriter;
+import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AlarmService {
     Database mysql = MySql.getMySql();
+
+    private static final AlarmService alarmService = new AlarmService();
+
+    private AlarmService() { }
+
+    public static AlarmService getAlarmService() {
+        return alarmService;
+    }
 
     public List<Reservation> getReservationsByDate(LocalDate date) {
         Connection conn = mysql.getConnection();
@@ -88,67 +96,302 @@ public class AlarmService {
     // AlarmService.java 내부에 추가
     public List<Reservation> getTodayApprovedReservations() {
         List<Reservation> list = new ArrayList<>();
-        // ERD 컬럼명: reservation_date, status, name, start_time, end_time 등 정확히 반영
-        String sql = "SELECT r.*, u.user_id, u.name as user_name, " +
-                "p.start_time, p.end_time, " +
-                "f.name as facility_name, e.name as equipment_name " +
+
+        // ERD 물리명칭(ALARM_ID, RECEIVER_ID 등)과 DTO 필드 구조를 고려한 쿼리
+        // reservation 테이블의 모든 컬럼과 연관 테이블의 필수 정보를 JOIN
+        String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.purpose, r.target_type, r.created_at, r.approved_at, r.real_use, " +
+                "       u.user_id, u.name AS u_name, " +
+                "       p.period_id, p.start_time, p.end_time, " +
+                "       f.facility_id, f.name AS f_name, " +
+                "       e.equipment_id, e.name AS e_name " +
                 "FROM reservation r " +
                 "JOIN user u ON r.user_id = u.user_id " +
                 "JOIN period p ON r.period_id = p.period_id " +
                 "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
                 "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
-                "WHERE r.reservation_date = CURDATE() AND r.status = 'APPROVED'";
+                "WHERE r.reservation_date = CURDATE() AND r.status = '승인'";
 
-        // 여기서부터는 Connection 맺고 ResultSet 돌려서 리스트 채우는 JDBC 기본 로직 작성...
-        // (이전 답변의 getReservationsByDate 로직과 동일하게 구현하시면 됩니다!)
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // 1. User 객체 조립 (u_name 별칭 사용)
+                User user = User.builder()
+                        .userId(rs.getInt("user_id"))
+                        .name(rs.getString("u_name"))
+                        .build();
+
+                // 2. Period 객체 조립 (시간 변환 처리)
+                Period period = Period.builder()
+                        .periodId(rs.getInt("period_id"))
+                        .startTime(rs.getTime("start_time").toLocalTime())
+                        .endTime(rs.getTime("end_time").toLocalTime())
+                        .build();
+
+                // 3. Facility / Equipment 조립 (null 체크 필수)
+                Facility facility = null;
+                if (rs.getObject("facility_id") != null) {
+                    facility = Facility.builder()
+                            .facilityId(rs.getLong("facility_id")) // DTO 타입(Long) 반영
+                            .name(rs.getString("f_name"))
+                            .build();
+                }
+
+                Equipment equipment = null;
+                if (rs.getObject("equipment_id") != null) {
+                    equipment = Equipment.builder()
+                            .equipmentId(rs.getLong("equipment_id")) // DTO 타입(Long) 반영
+                            .name(rs.getString("e_name"))
+                            .build();
+                }
+
+                // 4. 메인 Reservation 객체 완성
+                Reservation reservation = Reservation.builder()
+                        .reservationId(rs.getLong("reservation_id"))
+                        .user(user)       // 객체 주입
+                        .period(period)   // 객체 주입
+                        .facility(facility)
+                        .equipment(equipment)
+                        .purpose(rs.getString("purpose"))
+                        .targetType(rs.getString("target_type"))
+                        .status(rs.getString("status"))
+                        .realUse(rs.getString("real_use"))
+                        .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                        .reservationDate(rs.getDate("reservation_date").toLocalDate())
+                        .approvedAt(rs.getTimestamp("approved_at") != null ?
+                                rs.getTimestamp("approved_at").toLocalDateTime() : null)
+                        .build();
+
+                list.add(reservation);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 오늘자 승인 예약 조회 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return list;
     }
 
+    public int getManagerIdByReservationId(long resId) {
+        // 시설(facility) 또는 비품(equipment)의 manager_id를 가져오는 쿼리
+        // IFNULL이나 COALESCE를 써서 둘 중 하나라도 걸리게 처리합니다.
+        String sql = "SELECT COALESCE(f.manager_id, e.manager_id) as manager_id " +
+                "FROM reservation r " +
+                "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                "WHERE r.reservation_id = ?";
+
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, resId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("manager_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1; // 못 찾으면 -1 반환
+    }
+
     /**
-     * 알림을 DB에 저장하고 실시간 소켓으로 전송합니다.
-     * @param receiverId : 수신자 ID (user_id)
-     * @param content    : 알림 메시지 내용
-     * @param type       : 알림 타입 (START / RETURN)
+     * 반납 여부 확인 (RETURN_REQUEST에 해당 예약 ID가 있고, 상태가 완료인지 확인)
+     * 선생님의 로직대로 STATUS가 FALSE인 경우 연체로 판단하도록 작성
      */
+    public boolean isAlreadyReturned(long reservationId) {
+        // RETURN_REQUEST 테이블에서 해당 예약의 처리 상태를 조회
+        // (테이블 구조에 따라 쿼리는 조정하세요)
+        String sql = "SELECT COUNT(*) FROM return_request WHERE reservation_id = ? AND status = 'TRUE'";
+
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, reservationId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0; // 0보다 크면 이미 반납 처리된 것
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public void sendAndSaveAlarm(int receiverId, String content, String type) {
-        // 1. DB 저장 (ERD: alarm 테이블)
-        boolean isSaved = saveAlarmToDb(receiverId, content);
+        // 1. 소켓 여부 먼저 확인 → isRead 결정
+        PrintWriter receiverSocket = SocketSession.getClientMap().get(receiverId);
+        boolean isOnline = receiverSocket != null;
+
+        // 2. DB 저장 (온라인이면 isread=true, 오프라인이면 isread=false)
+        boolean isSaved = saveAlarmToDb(receiverId, content, type, isOnline);
 
         if (isSaved) {
-            // 2. 실시간 소켓 전송 (선생님의 소켓 서버 로직 호출)
-            // 예: SessionManager.getInstance().sendToUser(receiverId, content);
-            System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송");
+            if (isOnline) {
+                receiverSocket.println(content);
+                System.out.println("🚀 [소켓 전송 완료] User " + receiverId + "에게 메시지 발송 (isread=true)");
+            } else {
+                System.out.println("⚠️ [오프라인] User " + receiverId + "은 오프라인입니다. DB에만 저장됨 (isread=false)");
+            }
         } else {
             System.out.println("❌ [알림 저장 실패] DB 확인이 필요합니다.");
         }
     }
 
-    /**
-     * 알림 데이터를 DB에 Insert (ERD 컬럼명 준수)
-     */
-    private boolean saveAlarmToDb(int receiverId, String content) {
-        Connection conn = mysql.getConnection();
+    public boolean saveAlarmToDb(int receiverId, String content, String type, boolean isRead) {
         PreparedStatement pstmt = null;
+        Connection conn = mysql.getConnection();
+        boolean result = false;
 
-        // ERD 기준: receiver_id, content, generate_date, is_read
-        String sql = "INSERT INTO alarm (receiver_id, content, generate_date, isread, type) " +
-                "VALUES (?, ?, NOW(), 'N', '[testType]')";
+        String sql = "INSERT INTO alarm (receiver_id, type, generate_date, content, isread) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, receiverId);
-            pstmt.setString(2, content);
+            pstmt.setString(2, type);
+            pstmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            pstmt.setString(4, content);
+            pstmt.setString(5, isRead ? "true" : "false");
 
-            int result = pstmt.executeUpdate();
-            conn.commit();
-            return result > 0;
+            pstmt.executeUpdate();
+            mysql.commit(conn);
+            result = true;
+
         } catch (SQLException e) {
             mysql.rollback(conn);
             e.printStackTrace();
-            return false;
+            System.out.println(">> 알림 저장 실패: " + e.getMessage());
         } finally {
             mysql.close(pstmt);
             mysql.close(conn);
         }
+
+        return result;
+    }
+
+    public int getUnreadAlarmCount(int userId) {
+        String sql = "SELECT COUNT(*) FROM alarm WHERE receiver_id = ? AND isread = 'false'";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Alarm> getMyAlarms(int userId) {
+        List<Alarm> list = new ArrayList<>();
+        String sql = "SELECT * FROM alarm WHERE receiver_id = ? AND isread = 'false' ORDER BY generate_date DESC";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Alarm alarm = Alarm.builder()
+                            .alarmId(rs.getInt("alarm_id"))
+                            .receiverId(rs.getInt("receiver_id"))
+                            .type(rs.getString("type"))
+                            .generateDate(rs.getTimestamp("generate_date").toLocalDateTime())
+                            .content(rs.getString("content"))
+                            .isRead(rs.getString("isread"))
+                            .readDate(rs.getDate("readdate") != null ? rs.getDate("readdate").toLocalDate() : null)
+                            .build();
+                    list.add(alarm);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void markAllAlarmsAsRead(int userId) {
+        String sql = "UPDATE alarm SET isread = 'true', readdate = CURDATE() WHERE receiver_id = ? AND isread = 'false'";
+        try (Connection conn = MySql.getMySql().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.executeUpdate();
+            MySql.getMySql().commit(conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Reservation getReservationById(long reservationId) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Reservation reservation = null;
+        Connection conn = mysql.getConnection();
+
+        String sql = "SELECT r.*, " +
+                "u.user_id, u.name as user_name, " +
+                "f.facility_id, f.name as facility_name, " +
+                "e.equipment_id, e.name as equipment_name, " +
+                "p.period_id, p.start_time, p.end_time " +
+                "FROM reservation r " +
+                "JOIN user u ON r.user_id = u.user_id " +
+                "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                "JOIN period p ON r.period_id = p.period_id " +
+                "WHERE r.reservation_id = ?";
+
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, reservationId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                User user = User.builder()
+                        .userId(rs.getInt("user_id"))
+                        .name(rs.getString("user_name"))
+                        .build();
+
+                Period period = Period.builder()
+                        .periodId(rs.getInt("period_id"))
+                        .startTime(rs.getTime("start_time").toLocalTime())
+                        .endTime(rs.getTime("end_time").toLocalTime())
+                        .build();
+
+                Facility facility = null;
+                if (rs.getLong("facility_id") != 0) {
+                    facility = Facility.builder()
+                            .facilityId(rs.getLong("facility_id"))
+                            .name(rs.getString("facility_name"))
+                            .build();
+                }
+
+                Equipment equipment = null;
+                if (rs.getLong("equipment_id") != 0) {
+                    equipment = Equipment.builder()
+                            .equipmentId(rs.getLong("equipment_id"))
+                            .name(rs.getString("equipment_name"))
+                            .build();
+                }
+
+                reservation = Reservation.builder()
+                        .reservationId(rs.getLong("reservation_id"))
+                        .user(user)
+                        .period(period)
+                        .facility(facility)
+                        .equipment(equipment)
+                        .reservationDate(rs.getDate("reservation_date").toLocalDate())
+                        .targetType(rs.getString("target_type"))
+                        .status(rs.getString("status"))
+                        .build();
+            }
+
+        } catch (SQLException e) {
+            System.out.println(">> 예약 조회 실패: " + e.getMessage());
+        } finally {
+            mysql.close(rs);
+            mysql.close(pstmt);
+            mysql.close(conn);
+        }
+
+        return reservation;
     }
 }

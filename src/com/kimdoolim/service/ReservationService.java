@@ -98,10 +98,12 @@ public class ReservationService {
   }
 
   // 제한 기간 체크 (시설 또는 비품 id 중 하나만 전달)
-  public String validateBlockPeriod(LocalDate reservationDate, Long facilityId, Long equipmentId) {
-    String reason = reservationDAO.findBlockedReason(reservationDate, facilityId, equipmentId);
+  public String validateBlockPeriod(LocalDate reservationDate, Period period,
+                                    Long facilityId, Long equipmentId) {
+    String reason = reservationDAO.findBlockedReason(
+        reservationDate, period.getPeriodId(), facilityId, equipmentId);
     if (reason != null) {
-      return "해당 날짜는 예약이 제한된 기간입니다. (사유: " + reason + ")";
+      return "해당 날짜/교시는 예약이 제한된 기간입니다. (사유: " + reason + ")";
     }
     return null;
   }
@@ -123,7 +125,7 @@ public class ReservationService {
     int result = reservationDAO.cancelReservation(reservationId, Auth.getUserInfo().getUserId());
     return result > 0
         ? "예약이 취소되었습니다."
-        : "취소할 수 없습니다. (이미 취소/거절됐거나, 본인 예약이 아닙니다)";
+        : "취소할 수 없습니다. (이미 취소/거절됐거나, 사용된 내역입니다.)";
   }
 
   // ─────────────────────────────────────────────────────
@@ -176,4 +178,10 @@ public class ReservationService {
     int result = reservationDAO.forcecancelReservation(reservationId, reason);
     return result > 0 ? "예약이 강제 취소되었습니다." : "강제 취소 처리 중 오류가 발생했습니다.";
   }
+
+  //  block_schedule 테이블 체크
+  public String validateBlockSchedule(LocalDate date, Period period, Long facilityId, Long equipmentId) {
+    return new BlockScheduleService().checkBlocked(date, period.getPeriodId(), facilityId, equipmentId);
+  }
 }
+

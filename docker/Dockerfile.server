@@ -1,0 +1,20 @@
+FROM eclipse-temurin:17-jdk
+
+RUN apt-get update && apt-get install -y locales && \
+    locale-gen ko_KR.UTF-8 && \
+    update-locale LANG=ko_KR.UTF-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV LANG=ko_KR.UTF-8
+ENV LC_ALL=ko_KR.UTF-8
+ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8"
+
+WORKDIR /app
+
+COPY out/production/kosta308_mini_project ./classes
+COPY lib/mysql-connector-j-8.0.33.jar ./lib/mysql-connector-j-8.0.33.jar
+COPY lib/lombok-1.18.42.jar ./lib/lombok-1.18.42.jar
+
+RUN printf '#!/bin/bash\necho "MySQL 연결 대기 중..."\nwhile ! (echo > /dev/tcp/kimdoolim-mysql/3306) 2>/dev/null; do\n  echo "MySQL 아직 준비 안됨, 3초 대기..."\n  sleep 3\ndone\necho "MySQL 준비 완료! 서버 시작"\njava -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "./classes:./lib/mysql-connector-j-8.0.33.jar:./lib/lombok-1.18.42.jar" com.kimdoolim.main.ServerMain\n' > /app/start.sh && chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]

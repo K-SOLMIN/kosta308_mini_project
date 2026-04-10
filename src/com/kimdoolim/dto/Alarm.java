@@ -1,8 +1,13 @@
 package com.kimdoolim.dto;
 
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @Builder
@@ -33,5 +38,23 @@ public class Alarm {
     // 읽은날짜: READDATE (Domain, DATE)
     // 읽기 전에는 NULL일 수 있으므로 객체 타입인 LocalDate를 사용합니다.
     private LocalDate readDate;
+
+    private String settingAlarmMsg(Alarm alarm) {
+        String type = "[" + alarm.getType() + "]";
+        String content = alarm.getContent();
+        String date = alarm.getGenerateDate()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+        return "알림 " + type + " " + content + " (" + date + ")";
+    }
+
+    public String serverSendingMsg(Alarm alarm) {
+        String content = settingAlarmMsg(alarm);
+        int receiverId = alarm.getReceiverId();
+
+        String serverMsg = receiverId + ":" + content;
+
+        return serverMsg;
+    }
 
 }

@@ -45,18 +45,21 @@ public class Auth {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
+                boolean isActive = Boolean.parseBoolean(rs.getString("is_active"));
+
                 user = User.builder()
-                        .userId(rs.getInt("USER_ID"))
-                        .schoolId(rs.getInt("SCHOOL_ID"))
-                        .id(rs.getString("ID"))
-                        .password(rs.getString("PASSWORD"))
-                        .permission(Permission.valueOf(rs.getString("PERMISSION")))
-                        .name(rs.getString("NAME"))
-                        .phone(rs.getString("PHONE"))
-                        .gradeNo(rs.getInt("GRADE_NO"))
-                        .classNo(rs.getInt("CLASS_NO"))
-                        .isActive(Boolean.parseBoolean(rs.getString("IS_ACTIVE")))
-                        .build();
+                    .userId(rs.getInt("USER_ID"))
+                    .schoolId(rs.getInt("SCHOOL_ID"))
+                    .id(rs.getString("ID"))
+                    .password(rs.getString("PASSWORD"))
+                    .permission(Permission.valueOf(rs.getString("PERMISSION")))
+                    .name(rs.getString("NAME"))
+                    .phone(rs.getString("PHONE"))
+                    .gradeNo(rs.getInt("GRADE_NO"))
+                    .classNo(rs.getInt("CLASS_NO"))
+                    .isActive(isActive)
+                    .userStatus(rs.getString("is_active"))
+                    .build();
             }
 
             if(user != null) {
@@ -71,7 +74,7 @@ public class Auth {
             db.close(pstmt);
             db.close(conn);
         }
-        System.out.println("loginUser : " + user);
+//        System.out.println("loginUser : " + user);
         return result;
     }
 
