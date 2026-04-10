@@ -43,12 +43,12 @@ services:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
 
-  client1:
+  client:
     image: kimsolmin/socketclient:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client1
+    container_name: kimdoolim-client
     depends_on:
       - server
     stdin_open: true
@@ -59,40 +59,8 @@ services:
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
-
-  client2:
-    image: kimsolmin/socketclient:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client2
-    depends_on:
-      - server
-    stdin_open: true
-    tty: true
-    restart: always
-    networks:
-      - kimdoolim-network
-    environment:
-      - LANG=ko_KR.UTF-8
-      - LC_ALL=ko_KR.UTF-8
-
-  client3:
-    image: kimsolmin/socketclient:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client3
-    depends_on:
-      - server
-    stdin_open: true
-    tty: true
-    restart: always
-    networks:
-      - kimdoolim-network
-    environment:
-      - LANG=ko_KR.UTF-8
-      - LC_ALL=ko_KR.UTF-8
+    # 컨테이너가 죽지않게 유지
+    command: tail -f /dev/null
 
 volumes:
   mysql-data:
