@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SocketSession extends Thread{
     private Socket socket;
     private int socketUserId = -1; //서버소켓에 접속한 userId
+    private PrintWriter myWriter; // 중복 로그인 시 finally에서 내 세션만 제거하기 위해 보관
     AlarmService alarmService = AlarmService.getAlarmService();
     private static final Map<Integer, PrintWriter> clientMap = new ConcurrentHashMap<>();
 
@@ -35,6 +36,14 @@ public class SocketSession extends Thread{
             String firstLine = in.readLine();
             if (firstLine != null) {
                 this.socketUserId = Integer.parseInt(firstLine.trim());
+
+                // 중복 로그인 감지 - 기존 세션 강제 종료
+                PrintWriter existing = clientMap.get(socketUserId);
+                if (existing != null) {
+                    existing.println("FORCE_LOGOUT");
+                    System.out.println("⚠️ [중복 로그인] User " + socketUserId + " 기존 세션 강제 종료");
+                }
+
                 clientMap.put(socketUserId, out);
                 System.out.println("🔑 [연결성공] User " + socketUserId + " (현재 " + clientMap.size() + "명 접속 중)");
             }

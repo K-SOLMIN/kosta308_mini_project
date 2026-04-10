@@ -19,8 +19,11 @@ public class AlarmReceiveThread extends Thread{
             int reservationId = 62;
 
             while((alarmMsg = msgReader.readLine()) != null) {
+                if (alarmMsg.equals("FORCE_LOGOUT")) {
+                    System.out.println("\n⚠️ 다른 곳에서 로그인하여 현재 세션이 종료됩니다.");
+                    System.exit(0);
+                }
                 System.out.println("\n" + alarmMsg);
-
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
