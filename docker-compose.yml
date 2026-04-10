@@ -13,6 +13,7 @@ services:
       MYSQL_DATABASE: kimdoolim
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: Asia/Seoul
     ports:
       - "3308:3306"
     volumes:
@@ -42,6 +43,7 @@ services:
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
+      - TZ=Asia/Seoul
 
   client:
     image: kimsolmin/socketclient:latest
@@ -59,7 +61,7 @@ services:
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
-    # 컨테이너가 죽지않게 유지
+      - TZ=Asia/Seoul
     command: tail -f /dev/null
 
 volumes:
