@@ -41,7 +41,7 @@ public class MyPageView {
   // 내 정보 출력
   // ─────────────────────────────────────────────────────
   private void printUserInfo(User u) {
-    String permission = u.getPermission() == Permission.ADMIN      ? "최상위 관리자"
+    String permission = u.getPermission() == Permission.ADMIN ? "최상위 관리자"
         : u.getPermission() == Permission.MIDDLEADMIN ? "중간 관리자"
         : "일반 사용자";
     System.out.println(" 이름    : " + u.getName());
@@ -69,9 +69,13 @@ public class MyPageView {
 
     String msg = userService.changePassword(currentPwd, newPwd, confirmPwd);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+
+      try {
+          Thread.sleep(500);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+          throw new RuntimeException(e);
+      }
   }
 
   private int readInt() {
