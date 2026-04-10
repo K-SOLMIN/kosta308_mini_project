@@ -13,6 +13,7 @@ services:
       MYSQL_DATABASE: kimdoolim
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: Asia/Seoul
     ports:
       - "3308:3306"
     volumes:
@@ -22,10 +23,11 @@ services:
       - kimdoolim-network
     restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
 
   server:
     image: kimsolmin/socketserver:latest
@@ -42,13 +44,14 @@ services:
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
+      - TZ=Asia/Seoul
 
-  client1:
+  client:
     image: kimsolmin/socketclient:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client1
+    container_name: kimdoolim-client
     depends_on:
       - server
     stdin_open: true
@@ -59,40 +62,8 @@ services:
     environment:
       - LANG=ko_KR.UTF-8
       - LC_ALL=ko_KR.UTF-8
-
-  client2:
-    image: kimsolmin/socketclient:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client2
-    depends_on:
-      - server
-    stdin_open: true
-    tty: true
-    restart: always
-    networks:
-      - kimdoolim-network
-    environment:
-      - LANG=ko_KR.UTF-8
-      - LC_ALL=ko_KR.UTF-8
-
-  client3:
-    image: kimsolmin/socketclient:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.client
-    container_name: kimdoolim-client3
-    depends_on:
-      - server
-    stdin_open: true
-    tty: true
-    restart: always
-    networks:
-      - kimdoolim-network
-    environment:
-      - LANG=ko_KR.UTF-8
-      - LC_ALL=ko_KR.UTF-8
+      - TZ=Asia/Seoul
+    command: tail -f /dev/null
 
 volumes:
   mysql-data:

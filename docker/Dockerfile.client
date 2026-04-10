@@ -15,6 +15,8 @@ COPY out/production/kosta308_mini_project ./classes
 COPY lib/mysql-connector-j-8.0.33.jar ./lib/mysql-connector-j-8.0.33.jar
 COPY lib/lombok-1.18.42.jar ./lib/lombok-1.18.42.jar
 
-CMD ["java", "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", \
-     "-cp", "./classes:./lib/mysql-connector-j-8.0.33.jar:./lib/lombok-1.18.42.jar", \
-     "com.kimdoolim.main.ClientMain"]
+# 실행 스크립트 생성
+RUN echo '#!/bin/bash\njava -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "./classes:./lib/mysql-connector-j-8.0.33.jar:./lib/lombok-1.18.42.jar" com.kimdoolim.main.ClientMain' > /app/run.sh && \
+    chmod +x /app/run.sh
+
+CMD ["tail", "-f", "/dev/null"]

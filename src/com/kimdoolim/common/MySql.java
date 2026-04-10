@@ -7,10 +7,10 @@ import java.sql.SQLException;
 public class MySql implements Database {
 
     // 한글 깨짐 방지를 위해 UTF-8 인코딩 설정 추가(local용)
-    private static final String URL = "jdbc:mysql://localhost:3307/kimdoolim?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul"; //LOCAL용
+    //private static final String URL = "jdbc:mysql://localhost:3307/kimdoolim?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul"; //LOCAL용
 
     //docker용
-    //private static final String URL = "jdbc:mysql://kimdoolim-mysql:3308/kimdoolim?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul";
+    private static final String URL = "jdbc:mysql://kimdoolim-mysql:3306/kimdoolim?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul";
     private static final String USER     = "root";
     private static final String PASSWORD = "1111";
 
@@ -29,6 +29,7 @@ public class MySql implements Database {
     @Override
     public Connection getConnection() {
         Connection connection = null;
+
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
