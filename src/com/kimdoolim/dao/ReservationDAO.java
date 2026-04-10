@@ -224,7 +224,7 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
@@ -343,7 +343,7 @@ public class ReservationDAO {
         ? "AND (f.manager_id = ? OR e.manager_id = ?) "
         : "";
 
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
@@ -412,8 +412,7 @@ public class ReservationDAO {
     int result = 0;
 
     String sql = "UPDATE reservation " +
-        "SET status = '거절', " +
-        "    purpose = CONCAT(purpose, ' [반려사유: ', ?, ']') " +
+        "SET status = '거절', reason = ? " +
         "WHERE reservation_id = ? AND status = '대기'";
 
     try {
@@ -443,8 +442,7 @@ public class ReservationDAO {
     int result = 0;
 
     String sql = "UPDATE reservation " +
-        "SET status = '취소', " +
-        "    purpose = CONCAT(purpose, ' [강제취소사유: ', ?, ']') " +
+        "SET status = '취소', reason = ? " +
         "WHERE reservation_id = ? AND status = '승인'";
 
     try {
@@ -609,6 +607,7 @@ public class ReservationDAO {
           .reservationId(rs.getLong("reservation_id"))
           .reservationDate(rs.getDate("reservation_date").toLocalDate())
           .status(rs.getString("status"))
+          .reason(rs.getString("reason"))
           .purpose(rs.getString("purpose"))
           .targetType(rs.getString("target_type"))
           .createdAt(rs.getTimestamp("created_at").toLocalDateTime())

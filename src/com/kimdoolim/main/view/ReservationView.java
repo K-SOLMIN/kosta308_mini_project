@@ -79,23 +79,19 @@ public class ReservationView {
       return;
     }
 
-    // 교시 전체 목록 (다음 교시 시작 시간 계산용)
     List<Period> allPeriods = reservationService.getAvailablePeriods();
-    // start_time 기준 오름차순 정렬
     allPeriods.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
 
-    // 컬럼 고정폭: 번호(4) 신청일시(12) 예약날짜(12) 교시(10) 구분(4) 시설/비품명(16) 상태(14)
-    // 구분자 "  " × 6 = 12  →  합계 84
     String div = "─".repeat(84);
     System.out.println(div);
     System.out.println(
-        fit("번호",      4) + "  " +
-        fit("신청일시",  12) + "  " +
-        fit("예약날짜",  12) + "  " +
-        fit("교시",      10) + "  " +
-        fit("구분",       4) + "  " +
-        fit("시설/비품명", 16) + "  " +
-        fit("상태",      14)
+            fit("번호",      4) + "  " +
+                    fit("신청일시",  12) + "  " +
+                    fit("예약날짜",  12) + "  " +
+                    fit("교시",      10) + "  " +
+                    fit("구분",       4) + "  " +
+                    fit("시설/비품명", 16) + "  " +
+                    fit("상태",      14)
     );
     System.out.println(div);
 
@@ -103,8 +99,8 @@ public class ReservationView {
       Reservation r = list.get(i);
 
       String targetName = r.getTargetType().equals("FACILITY")
-          ? (r.getFacility() != null ? r.getFacility().getName() : "-")
-          : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
+              ? (r.getFacility() != null ? r.getFacility().getName() : "-")
+              : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
       String statusDisplay;
       if (r.getStatus().equals("대기")) {
@@ -114,15 +110,15 @@ public class ReservationView {
         LocalTime now   = LocalTime.now();
         boolean isToday      = r.getReservationDate().isEqual(today);
         boolean isDuringTime = !now.isBefore(r.getPeriod().getStartTime())
-            && !now.isAfter(r.getPeriod().getEndTime());
+                && !now.isAfter(r.getPeriod().getEndTime());
         statusDisplay = (isToday && isDuringTime) ? "사용중" : "승인";
       } else if (r.getStatus().equals("반납완료") && r.getReturnedAt() != null) {
         LocalTime currentEnd = r.getPeriod().getEndTime();
         LocalTime deadlineTime = allPeriods.stream()
-            .map(Period::getStartTime)
-            .filter(t -> t.isAfter(currentEnd))
-            .findFirst()
-            .orElse(currentEnd);
+                .map(Period::getStartTime)
+                .filter(t -> t.isAfter(currentEnd))
+                .findFirst()
+                .orElse(currentEnd);
         LocalDateTime deadline = r.getReservationDate().atTime(deadlineTime);
         statusDisplay = r.getReturnedAt().isAfter(deadline) ? "반납완료(지연)" : "반납완료";
       } else {
@@ -130,14 +126,19 @@ public class ReservationView {
       }
 
       System.out.println(
-          fit(String.valueOf(i + 1), 4) + "  " +
-          fit(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 12) + "  " +
-          fit(r.getReservationDate().toString(), 12) + "  " +
-          fit(r.getPeriod().getPeriodName(), 10) + "  " +
-          fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + "  " +
-          fit(targetName, 16) + "  " +
-          fit(statusDisplay, 14)
+              fit(String.valueOf(i + 1), 4) + "  " +
+                      fit(r.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")), 12) + "  " +
+                      fit(r.getReservationDate().toString(), 12) + "  " +
+                      fit(r.getPeriod().getPeriodName(), 10) + "  " +
+                      fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + "  " +
+                      fit(targetName, 16) + "  " +
+                      fit(statusDisplay, 14)
       );
+
+      // 취소 또는 거절인 경우 사유 출력
+      if ((r.getStatus().equals("취소") || r.getStatus().equals("거절")) && r.getReason() != null) {
+        System.out.println("     └ 사유: " + r.getReason());
+      }
     }
     System.out.println(div);
   }

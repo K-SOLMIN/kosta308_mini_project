@@ -22,6 +22,7 @@ public class Reservation {
     private LocalDateTime createdAt;
     private LocalDate reservationDate;
     private String status;
+    private String reason;
     private String realUse;
     private LocalDateTime approvedAt;
     private String targetType;
