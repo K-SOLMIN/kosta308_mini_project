@@ -61,7 +61,7 @@ public class MyPageView {
     System.out.print("현재 비밀번호: ");
     String currentPwd = scanner.nextLine().trim();
 
-    System.out.print("새 비밀번호: ");
+    System.out.print("새 비밀번호[대문자,소문자,숫자,특수문자(~!@#$%^&*?) 포함 8글자]: ");
     String newPwd = scanner.nextLine().trim();
 
     System.out.print("새 비밀번호 확인: ");
