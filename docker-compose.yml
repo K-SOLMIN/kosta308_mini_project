@@ -23,10 +23,11 @@ services:
       - kimdoolim-network
     restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1111" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   server:
     image: kimsolmin/socketserver:latest
