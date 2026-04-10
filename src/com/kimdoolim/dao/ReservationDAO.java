@@ -57,19 +57,22 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT facility_id, location, name, max_capacity, status " +
+    String sql = "SELECT facility_id, location, name, max_capacity, status, manager_id " +
         "FROM facility WHERE is_delete = 'false' AND status = '정상'";
 
     try {
       pstmt = conn.prepareStatement(sql);
       rs = pstmt.executeQuery();
       while (rs.next()) {
+        long managerId = rs.getLong("manager_id");
+        User manager = rs.wasNull() ? null : User.builder().userId((int) managerId).build();
         list.add(Facility.builder()
             .facilityId(rs.getLong("facility_id"))
             .location(rs.getString("location"))
             .name(rs.getString("name"))
             .maxCapacity(rs.getInt("max_capacity"))
             .status(rs.getString("status"))
+            .user(manager)
             .build());
       }
     } catch (SQLException e) {
@@ -89,7 +92,7 @@ public class ReservationDAO {
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
-    String sql = "SELECT e.equipment_id, e.name, e.location, e.status, " +
+    String sql = "SELECT e.equipment_id, e.name, e.location, e.status, e.manager_id, " +
         "       (SELECT GROUP_CONCAT(CONCAT(cnt, ' ', status) ORDER BY status SEPARATOR ' / ') " +
         "        FROM (SELECT status, COUNT(*) AS cnt FROM equipmentdetail " +
         "              WHERE equipment_id = e.equipment_id AND check_delete = 'false' GROUP BY status) t" +
@@ -100,12 +103,15 @@ public class ReservationDAO {
       pstmt = conn.prepareStatement(sql);
       rs = pstmt.executeQuery();
       while (rs.next()) {
+        long managerId = rs.getLong("manager_id");
+        User manager = rs.wasNull() ? null : User.builder().userId((int) managerId).build();
         list.add(Equipment.builder()
             .equipmentId(rs.getLong("equipment_id"))
             .name(rs.getString("name"))
             .location(rs.getString("location"))
             .status(rs.getString("status"))
             .statusSummary(rs.getString("status_summary"))
+            .user(manager)
             .build());
       }
     } catch (SQLException e) {

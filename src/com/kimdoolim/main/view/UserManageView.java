@@ -86,6 +86,7 @@ public class UserManageView {
     }
     System.out.println(div);
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -128,6 +129,7 @@ public class UserManageView {
 
     if (!confirm.equals("Y")) {
       System.out.println("등록이 취소되었습니다.");
+      waitBack();
       return;
     }
 
@@ -143,6 +145,7 @@ public class UserManageView {
 
     System.out.println(">> " + userService.registerUser(newUser));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -157,9 +160,10 @@ public class UserManageView {
     if (target == null) return;
 
     System.out.print("휴직 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.setLeaveOfAbsence(target.getUserId()));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -174,18 +178,19 @@ public class UserManageView {
         .filter(u -> "휴직".equals(u.getUserStatus()))
         .collect(java.util.stream.Collectors.toList());
 
-    if (list.isEmpty()) { System.out.println("휴직 중인 사용자가 없습니다."); return; }
+    if (list.isEmpty()) { System.out.println("휴직 중인 사용자가 없습니다."); waitBack(); return; }
 
     printUserSubList(list);
     System.out.print("복직할 번호 (0: 뒤로): ");
     int index = readInt();
     if (index == 0) return;
-    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); return; }
+    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); waitBack(); return; }
 
     System.out.print("복직 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.restoreFromLeave(list.get(index - 1).getUserId()));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -201,9 +206,10 @@ public class UserManageView {
 
     System.out.println("※ 전근 처리 시 해당 사용자는 비활성화되며, 새 학교 관리자의 승인이 필요합니다.");
     System.out.print("전근 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.setTransfer(target.getUserId()));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -218,18 +224,19 @@ public class UserManageView {
         .filter(u -> "전근".equals(u.getUserStatus()))
         .collect(java.util.stream.Collectors.toList());
 
-    if (list.isEmpty()) { System.out.println("전근 승인 대기 중인 사용자가 없습니다."); return; }
+    if (list.isEmpty()) { System.out.println("전근 승인 대기 중인 사용자가 없습니다."); waitBack(); return; }
 
     printUserSubList(list);
     System.out.print("승인할 번호 (0: 뒤로): ");
     int index = readInt();
     if (index == 0) return;
-    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); return; }
+    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); waitBack(); return; }
 
     System.out.print("승인하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.approveTransfer(list.get(index - 1).getUserId()));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
   }
@@ -284,7 +291,7 @@ public class UserManageView {
     System.out.print("변경할 사용자 번호 (0: 뒤로): ");
     int index = readInt();
     if (index == 0) return;
-    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); return; }
+    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); waitBack(); return; }
 
     User target = list.get(index - 1);
     String currentPerm = target.getPermission() == Permission.MIDDLEADMIN ? "중간 관리자" : "일반 사용자";
@@ -296,13 +303,24 @@ public class UserManageView {
 
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) {
       System.out.println("취소되었습니다.");
+      waitBack();
       return;
     }
 
     System.out.println(">> " + userService.togglePermission(target.getUserId(), target.getPermission()));
     System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
     scanner.nextLine();
     return;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 메시지 출력 후 엔터 대기
+  // ─────────────────────────────────────────────────────
+  private void waitBack() {
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────

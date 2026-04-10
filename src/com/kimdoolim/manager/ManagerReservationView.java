@@ -79,7 +79,9 @@ public class ManagerReservationView {
       case 1:
         String approveMsg = reservationService.approveReservation(target.getReservationId());
         System.out.println(">> " + approveMsg);
-        AppScanner.pause();
+        System.out.println(" 0. 뒤로가기");
+        System.out.print("선택: ");
+        scanner.nextLine();
         break;
       case 2:
         System.out.print("반려 사유를 입력하세요: ");
@@ -90,7 +92,9 @@ public class ManagerReservationView {
         }
         String rejectMsg = reservationService.rejectReservation(target.getReservationId(), reason);
         System.out.println(">> " + rejectMsg);
-        AppScanner.pause();
+        System.out.println(" 0. 뒤로가기");
+        System.out.print("선택: ");
+        scanner.nextLine();
         break;
       case 0:
         return;
@@ -143,7 +147,9 @@ public class ManagerReservationView {
 
     String msg = reservationService.forceCancelReservation(target.getReservationId(), reason);
     System.out.println(">> " + msg);
-    AppScanner.pause();
+    System.out.println(" 0. 뒤로가기");
+    System.out.print("선택: ");
+    scanner.nextLine();
   }
 
   // ─────────────────────────────────────────────────────
@@ -187,8 +193,16 @@ public class ManagerReservationView {
           fit(targetName, 16) + " " +
           fit(r.getStatus(), 10)
       );
+      if (r.getPurpose() != null && !r.getPurpose().isEmpty()) {
+        System.out.println("     └ 신청 사유: " + r.getPurpose());
+      }
+      if (r.getReason() != null && !r.getReason().isEmpty()) {
+        String reasonLabel = r.getStatus().equals("거절") ? "반려 사유"
+            : r.getStatus().equals("강제취소") ? "강제취소 사유" : "사유";
+        System.out.println("     └ " + reasonLabel + ": " + r.getReason());
+      }
+      System.out.println(sep);
     }
-    System.out.println(sep);
   }
 
   // ─────────────────────────────────────────────────────

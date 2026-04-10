@@ -19,17 +19,6 @@ public class AppScanner {
     return scanner;
   }
 
-  /** 메시지 확인 후 Enter 대기 */
-  public static void pause() {
-    System.out.print("\n  [ Enter 를 누르면 계속합니다 ] ");
-    System.out.flush();
-    try {
-      // Windows/PowerShell 에서 이전 nextLine() 후 \r\n 잔여분을 제거
-      try { scanner.skip("[\\r\\n]*"); } catch (Exception ignored) {}
-      scanner.nextLine();
-    } catch (Exception ignored) {}
-  }
-
   /** 콘솔 화면 클리어 (보이는 화면 + 스크롤 버퍼 전부 삭제) */
   public static void cls() {
     System.out.print("\033[H\033[2J\033[3J");
