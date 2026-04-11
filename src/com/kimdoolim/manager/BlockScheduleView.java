@@ -30,7 +30,7 @@ public class BlockScheduleView {
     while (true) {
       AppScanner.cls();
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────");
-      System.out.println("                    [ 교시별 예약 차단 관리 ]");
+      System.out.println("                            [ 교시별 예약 차단 관리 ]");
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────");
       System.out.println(" 1.차단 목록 조회 || 2.특정 날짜+교시 차단 || 3.반복 요일+교시 차단 || 4.차단 삭제 || 0.뒤로 가기");
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────");
@@ -86,7 +86,7 @@ public class BlockScheduleView {
           fit(target, 12) + " " + m.get("desc"));
     }
     System.out.println(sep);
-    waitBack();
+    //waitBack();
   }
 
   // ─────────────────────────────────────────────────────
