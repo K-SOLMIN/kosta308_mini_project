@@ -75,20 +75,17 @@ public class ReservationView {
     AppScanner.cls();
     System.out.println("\n[내 예약 목록]");
 
+    reservationService.autoRejectExpiredPending();
     List<Reservation> list = reservationService.getMyReservations();
 
     if (list.isEmpty()) {
       System.out.println("예약 내역이 없습니다.");
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
     printMyReservationList(list);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // 목록 출력만 (pause 없음) - 취소 흐름 등에서 재사용
@@ -227,9 +224,7 @@ public class ReservationView {
 
     String msg = reservationService.returnReservation(target.getReservationId(), condition);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -252,9 +247,7 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -262,9 +255,7 @@ public class ReservationView {
     String scheduleError = reservationService.validateBlockSchedule(date, period, facility.getFacilityId(), null);
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -272,9 +263,7 @@ public class ReservationView {
     String blockError = reservationService.validateBlockPeriod(date, period, facility.getFacilityId(), null);
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -300,9 +289,7 @@ public class ReservationView {
 
     String msg = reservationService.requestFacilityReservation(date, period, facility, purpose);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -325,9 +312,7 @@ public class ReservationView {
     String validationError = reservationService.validateDateAndPeriod(date, period);
     if (validationError != null) {
       System.out.println(">> " + validationError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -335,9 +320,7 @@ public class ReservationView {
     String scheduleError = reservationService.validateBlockSchedule(date, period, null, equipment.getEquipmentId());
     if (scheduleError != null) {
       System.out.println(">> " + scheduleError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -345,9 +328,7 @@ public class ReservationView {
     String blockError = reservationService.validateBlockPeriod(date, period, null, equipment.getEquipmentId());
     if (blockError != null) {
       System.out.println(">> " + blockError);
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -373,10 +354,7 @@ public class ReservationView {
 
     String msg = reservationService.requestEquipmentReservation(date, period, equipment, purpose);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -386,13 +364,21 @@ public class ReservationView {
     AppScanner.cls();
     System.out.println("\n[예약 취소]");
 
-    List<Reservation> list = reservationService.getMyReservations();
+    LocalDate today = LocalDate.now();
+    LocalTime now = LocalTime.now();
+    List<Reservation> list = reservationService.getMyReservations().stream()
+        .filter(r -> r.getStatus().equals("대기") || r.getStatus().equals("승인"))
+        .filter(r -> {
+          LocalDate resDate = r.getReservationDate();
+          if (resDate.isAfter(today)) return true;
+          if (resDate.isBefore(today)) return false;
+          return !r.getPeriod().getStartTime().isBefore(now);
+        })
+        .collect(java.util.stream.Collectors.toList());
 
     if (list.isEmpty()) {
       System.out.println("취소할 예약이 없습니다.");
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -403,9 +389,7 @@ public class ReservationView {
     if (index == 0) return;
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
-      System.out.println(" 0. 뒤로가기");
-      System.out.print("선택: ");
-      scanner.nextLine();
+      waitBack();
       return;
     }
 
@@ -418,9 +402,7 @@ public class ReservationView {
 
     String msg = reservationService.cancelReservation(target.getReservationId());
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -448,6 +430,7 @@ public class ReservationView {
 
     if (periods.isEmpty()) {
       System.out.println("등록된 교시가 없습니다.");
+      waitBack();
       return null;
     }
 
@@ -473,6 +456,7 @@ public class ReservationView {
 
     if (facilities.isEmpty()) {
       System.out.println("예약 가능한 시설이 없습니다.");
+      waitBack();
       return null;
     }
 
@@ -498,6 +482,7 @@ public class ReservationView {
 
     if (equipments.isEmpty()) {
       System.out.println("예약 가능한 비품이 없습니다.");
+      waitBack();
       return null;
     }
 
@@ -521,9 +506,11 @@ public class ReservationView {
   // 메시지 출력 후 엔터 대기
   // ─────────────────────────────────────────────────────
   private void waitBack() {
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
+    }
   }
 
   // ─────────────────────────────────────────────────────

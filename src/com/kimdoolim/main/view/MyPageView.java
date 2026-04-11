@@ -69,9 +69,15 @@ public class MyPageView {
 
     String msg = userService.changePassword(currentPwd, newPwd, confirmPwd);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
+  }
+
+  private void waitBack() {
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
+    }
   }
 
   private int readInt() {

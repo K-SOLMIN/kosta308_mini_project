@@ -108,6 +108,10 @@ public class ReservationService {
     return null;
   }
 
+  public void autoRejectExpiredPending() {
+    reservationDAO.autoRejectExpiredPending();
+  }
+
   public List<Reservation> getMyReservations() {
     return reservationDAO.findReservationsByUserId(Auth.getUserInfo().getUserId());
   }

@@ -52,6 +52,7 @@ public class ManagerReservationView {
 
     if (list.isEmpty()) {
       System.out.println("대기 중인 예약이 없습니다.");
+      waitBack();
       return;
     }
 
@@ -62,6 +63,7 @@ public class ManagerReservationView {
     if (index == 0) return;
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
+      waitBack();
       return;
     }
 
@@ -79,22 +81,19 @@ public class ManagerReservationView {
       case 1:
         String approveMsg = reservationService.approveReservation(target.getReservationId());
         System.out.println(">> " + approveMsg);
-        System.out.println(" 0. 뒤로가기");
-        System.out.print("선택: ");
-        scanner.nextLine();
+        waitBack();
         break;
       case 2:
         System.out.print("반려 사유를 입력하세요: ");
         String reason = scanner.nextLine().trim();
         if (reason.isEmpty()) {
           System.out.println("반려 사유는 필수입니다.");
+          waitBack();
           return;
         }
         String rejectMsg = reservationService.rejectReservation(target.getReservationId(), reason);
         System.out.println(">> " + rejectMsg);
-        System.out.println(" 0. 뒤로가기");
-        System.out.print("선택: ");
-        scanner.nextLine();
+        waitBack();
         break;
       case 0:
         return;
@@ -116,6 +115,7 @@ public class ManagerReservationView {
 
     if (list.isEmpty()) {
       System.out.println("강제 취소할 예약이 없습니다. (승인된 예약만 강제 취소 가능)");
+      waitBack();
       return;
     }
 
@@ -126,6 +126,7 @@ public class ManagerReservationView {
     if (index == 0) return;
     if (index < 1 || index > list.size()) {
       System.out.println("잘못된 번호입니다.");
+      waitBack();
       return;
     }
 
@@ -135,6 +136,7 @@ public class ManagerReservationView {
     String reason = scanner.nextLine().trim();
     if (reason.isEmpty()) {
       System.out.println("강제 취소 사유는 필수입니다.");
+      waitBack();
       return;
     }
 
@@ -142,14 +144,13 @@ public class ManagerReservationView {
     String confirm = scanner.nextLine().trim().toUpperCase();
     if (!confirm.equals("Y")) {
       System.out.println("강제 취소가 중단되었습니다.");
+      waitBack();
       return;
     }
 
     String msg = reservationService.forceCancelReservation(target.getReservationId(), reason);
     System.out.println(">> " + msg);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -202,6 +203,17 @@ public class ManagerReservationView {
         System.out.println("     └ " + reasonLabel + ": " + r.getReason());
       }
       System.out.println(sep);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 메시지 출력 후 엔터 대기
+  // ─────────────────────────────────────────────────────
+  private void waitBack() {
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
     }
   }
 

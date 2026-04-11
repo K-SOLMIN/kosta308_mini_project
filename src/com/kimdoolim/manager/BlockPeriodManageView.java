@@ -98,7 +98,7 @@ public class BlockPeriodManageView {
             }
 
             switch (choice) {
-                case 1: searchAllBlockPeriods(); break;
+                case 1: searchAllBlockPeriods(); waitForBack(); break;
                 case 2: enrollBlockMasterView(); break;
                 case 3: enrollBlockDetailView(); break;
                 case 4: updateBlockPeriodView(); break;
@@ -349,9 +349,11 @@ public class BlockPeriodManageView {
     // 메시지 출력 후 엔터 대기
     // ─────────────────────────────────────────────────────
     private void waitForBack() {
-        System.out.println(" 0. 뒤로가기");
-        System.out.print("선택: ");
-        scanner.nextLine();
+        while (true) {
+            System.out.println(" 0. 뒤로가기");
+            System.out.print("선택: ");
+            if ("0".equals(scanner.nextLine().trim())) return;
+        }
     }
 
     // ─────────────────────────────────────────────────────

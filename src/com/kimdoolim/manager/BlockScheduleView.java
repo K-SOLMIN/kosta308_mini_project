@@ -54,7 +54,7 @@ public class BlockScheduleView {
   private void showList() {
     AppScanner.cls();
     List<Map<String, Object>> list = service.getAllBlockSchedules();
-    if (list.isEmpty()) { System.out.println("등록된 차단 일정이 없습니다."); return; }
+    if (list.isEmpty()) { System.out.println("등록된 차단 일정이 없습니다."); waitBack(); return; }
 
     System.out.println("\n[교시별 차단 목록]");
     // ID(4) 유형(8) 날짜/요일(22) 교시(8) 적용대상(12) 사유
@@ -86,9 +86,7 @@ public class BlockScheduleView {
           fit(target, 12) + " " + m.get("desc"));
     }
     System.out.println(sep);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -117,16 +115,14 @@ public class BlockScheduleView {
 
     System.out.print("차단 사유: ");
     String desc = scanner.nextLine().trim();
-    if (desc.isEmpty()) { System.out.println("사유를 입력해주세요."); return; }
+    if (desc.isEmpty()) { System.out.println("사유를 입력해주세요."); waitBack(); return; }
 
     System.out.println("\n> " + date + " " + period.getPeriodName() + " 차단 / 사유: " + desc);
     System.out.print("등록하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
 
     System.out.println(">> " + service.addSpecificBlock(date, period.getPeriodId(), desc, facilityId, equipmentId));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -138,7 +134,7 @@ public class BlockScheduleView {
     System.out.println(" 1.일 2.월 3.화 4.수 5.목 6.금 7.토");
     System.out.print("요일 선택: ");
     int day = readInt();
-    if (day < 1 || day > 7) { System.out.println("잘못된 입력입니다."); return; }
+    if (day < 1 || day > 7) { System.out.println("잘못된 입력입니다."); waitBack(); return; }
 
     System.out.print("반복 시작일 (yyyy-MM-dd): ");
     LocalDate startDate = parseDate(scanner.nextLine().trim());
@@ -163,17 +159,15 @@ public class BlockScheduleView {
 
     System.out.print("차단 사유: ");
     String desc = scanner.nextLine().trim();
-    if (desc.isEmpty()) { System.out.println("사유를 입력해주세요."); return; }
+    if (desc.isEmpty()) { System.out.println("사유를 입력해주세요."); waitBack(); return; }
 
     System.out.println("\n> 매주 " + DAY_NAMES[day] + "요일 " + period.getPeriodName()
         + " (" + startDate + "~" + endDate + ") / 사유: " + desc);
     System.out.print("등록하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
 
     System.out.println(">> " + service.addRepeatBlock(day, startDate, endDate, period.getPeriodId(), desc, facilityId, equipmentId));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -181,18 +175,22 @@ public class BlockScheduleView {
   // ─────────────────────────────────────────────────────
   private void deleteFlow() {
     AppScanner.cls();
+    List<Map<String, Object>> checkList = service.getAllBlockSchedules();
+    if (checkList.isEmpty()) {
+      System.out.println("등록된 차단 일정이 없습니다.");
+      waitBack();
+      return;
+    }
     showList();
     System.out.print("삭제할 ID 입력 (0: 뒤로): ");
     int id = readInt();
     if (id == 0) return;
 
     System.out.print("삭제하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); return; }
+    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
 
     System.out.println(">> " + service.deleteBlockSchedule(id));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -208,30 +206,31 @@ public class BlockScheduleView {
 
     if (type == 1) {
       List<Facility> facilities = facilityEquipmentService.getAllFacilities();
-      if (facilities.isEmpty()) { System.out.println("담당 시설이 없습니다."); return null; }
+      if (facilities.isEmpty()) { System.out.println("담당 시설이 없습니다."); waitBack(); return null; }
       System.out.println("\n── 시설 목록 ──");
       for (int i = 0; i < facilities.size(); i++) {
         System.out.printf(" %d. %s [%s]%n", i + 1, facilities.get(i).getName(), facilities.get(i).getLocation());
       }
       System.out.print("선택: ");
       int idx = readInt();
-      if (idx < 1 || idx > facilities.size()) { System.out.println("잘못된 입력입니다."); return null; }
+      if (idx < 1 || idx > facilities.size()) { System.out.println("잘못된 입력입니다."); waitBack(); return null; }
       return new Long[]{facilities.get(idx - 1).getFacilityId(), null};
 
     } else if (type == 2) {
       List<Equipment> equipments = facilityEquipmentService.getAllEquipments();
-      if (equipments.isEmpty()) { System.out.println("담당 비품이 없습니다."); return null; }
+      if (equipments.isEmpty()) { System.out.println("담당 비품이 없습니다."); waitBack(); return null; }
       System.out.println("\n── 비품 목록 ──");
       for (int i = 0; i < equipments.size(); i++) {
         System.out.printf(" %d. %s [%s]%n", i + 1, equipments.get(i).getName(), equipments.get(i).getLocation());
       }
       System.out.print("선택: ");
       int idx = readInt();
-      if (idx < 1 || idx > equipments.size()) { System.out.println("잘못된 입력입니다."); return null; }
+      if (idx < 1 || idx > equipments.size()) { System.out.println("잘못된 입력입니다."); waitBack(); return null; }
       return new Long[]{null, equipments.get(idx - 1).getEquipmentId()};
 
     } else {
       System.out.println("잘못된 입력입니다.");
+      waitBack();
       return null;
     }
   }
@@ -248,8 +247,16 @@ public class BlockScheduleView {
     }
     System.out.print("선택: ");
     int choice = readInt();
-    if (choice < 1 || choice > periods.size()) { System.out.println("잘못된 입력입니다."); return null; }
+    if (choice < 1 || choice > periods.size()) { System.out.println("잘못된 입력입니다."); waitBack(); return null; }
     return periods.get(choice - 1);
+  }
+
+  private void waitBack() {
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
+    }
   }
 
   private LocalDate parseDate(String input) {

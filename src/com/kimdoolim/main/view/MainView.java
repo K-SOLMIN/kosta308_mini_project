@@ -5,6 +5,7 @@ import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.main.ClientMain;
 import com.kimdoolim.manager.BlockPeriodManageView;
+import com.kimdoolim.manager.BlockScheduleView;
 import com.kimdoolim.manager.FacilityEquipmentView;
 import com.kimdoolim.manager.ManagerReservationView;
 
@@ -16,7 +17,7 @@ public class MainView {
     private final Scanner scanner = AppScanner.getScanner();
     private final AlarmService alarmService = AlarmService.getAlarmService();
 
-    private static final int W = 80;
+    private static final int W = 84;
     private static final String BORDER = "=".repeat(W);
 
     /** 한글(2칸) / 영문(1칸) 기준으로 가운데 정렬 */
@@ -63,7 +64,7 @@ public class MainView {
             System.out.println(BORDER);
             System.out.println(center("사용자 메인 메뉴"));
             System.out.println(BORDER);
-            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
+            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
             System.out.println(BORDER);
             System.out.print("메뉴 선택: ");
 
@@ -91,8 +92,8 @@ public class MainView {
             System.out.println(BORDER);
             System.out.println(center("중간 관리자 메인 메뉴"));
             System.out.println(BORDER);
-            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.종료%n", unread);
-            System.out.println(" 5.예약 관리 || 6.시설/비품 관리");
+            System.out.printf(" 1.예약하기  || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
+            System.out.println(" 5.예약 관리 || 6.시설/비품 관리 || 7.제한기간 관리");
             System.out.println(BORDER);
             System.out.print("메뉴 선택: ");
 
@@ -103,6 +104,7 @@ public class MainView {
                 case 4: new AlarmView().alarmMenu(); break;
                 case 5: new ManagerReservationView().managerReservationMenu(); break;
                 case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;
+                case 7: new BlockScheduleView().blockScheduleMenu(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
                     closeSocket(); return;
@@ -122,7 +124,7 @@ public class MainView {
             System.out.println(BORDER);
             System.out.println(center("상위 관리자 메인 메뉴"));
             System.out.println(BORDER);
-            System.out.printf(" 1.예약하기 || 2.예약 내역 확인 || 3.마이페이지 || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
+            System.out.printf(" 1.예약하기  || 2.예약 내역 확인 || 3.마이페이지  || 4.알림 조회(%d건) || 0.로그아웃%n", unread);
             System.out.println(" 5.예약 관리 || 6.시설/비품 관리 || 7.사용자 관리 || 8.제한기간 관리");
             System.out.println(BORDER);
             System.out.print("메뉴 선택: ");

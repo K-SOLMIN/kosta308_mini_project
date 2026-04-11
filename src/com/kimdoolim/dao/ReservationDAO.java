@@ -269,7 +269,7 @@ public class ReservationDAO {
     ResultSet rs = null;
 
     // 시간 필터는 MySQL CURTIME() 대신 Java LocalTime으로 처리 (시간대 오차 방지)
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
@@ -538,7 +538,35 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 17. 제한 기간 체크
+  // 17. 만료된 대기 예약 자동 거절 (전체 사용자 대상)
+  //     교시 종료 시간이 지난 '대기' 상태 예약을 '거절'로 변경
+  // ─────────────────────────────────────────────────────
+  public int autoRejectExpiredPending() {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    int result = 0;
+
+    String sql = "UPDATE reservation r " +
+        "JOIN period p ON r.period_id = p.period_id " +
+        "SET r.status = '거절', r.reason = '예약 기간 만료 (자동 처리)' " +
+        "WHERE r.status = '대기' " +
+        "AND CONCAT(r.reservation_date, ' ', p.end_time) < NOW()";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      result = pstmt.executeUpdate();
+      if (result > 0) db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      // 자동 처리 오류는 사용자에게 노출하지 않음
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 18. 제한 기간 체크
   //     - period_id IS NULL  → 종일 제한 (교시 무관)
   //     - period_id = 해당 교시 → 해당 교시만 제한
   // ─────────────────────────────────────────────────────

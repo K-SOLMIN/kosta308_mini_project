@@ -34,8 +34,10 @@ public class AlarmView {
         }
 
         System.out.println("─".repeat(50));
-        System.out.println(" 0. 뒤로가기");
-        System.out.print("선택: ");
-        AppScanner.getScanner().nextLine();
+        while (true) {
+            System.out.println(" 0. 뒤로가기");
+            System.out.print("선택: ");
+            if ("0".equals(AppScanner.getScanner().nextLine().trim())) return;
+        }
     }
 }

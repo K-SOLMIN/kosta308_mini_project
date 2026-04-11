@@ -49,6 +49,7 @@ public class UserManageView {
 
     if (list.isEmpty()) {
       System.out.println("등록된 사용자가 없습니다.");
+      waitBack();
       return;
     }
 
@@ -85,10 +86,7 @@ public class UserManageView {
       );
     }
     System.out.println(div);
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -144,10 +142,7 @@ public class UserManageView {
         .build();
 
     System.out.println(">> " + userService.registerUser(newUser));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -162,10 +157,7 @@ public class UserManageView {
     System.out.print("휴직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.setLeaveOfAbsence(target.getUserId()));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -189,10 +181,7 @@ public class UserManageView {
     System.out.print("복직 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.restoreFromLeave(list.get(index - 1).getUserId()));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -208,10 +197,7 @@ public class UserManageView {
     System.out.print("전근 처리하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.setTransfer(target.getUserId()));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -235,10 +221,7 @@ public class UserManageView {
     System.out.print("승인하시겠습니까? (Y/N): ");
     if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
     System.out.println(">> " + userService.approveTransfer(list.get(index - 1).getUserId()));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -249,7 +232,7 @@ public class UserManageView {
         .filter(User::isActive)
         .collect(java.util.stream.Collectors.toList());
 
-    if (list.isEmpty()) { System.out.println("활성 사용자가 없습니다."); return null; }
+    if (list.isEmpty()) { System.out.println("활성 사용자가 없습니다."); waitBack(); return null; }
 
     printUserSubList(list);
     System.out.print("번호 선택 (0: 뒤로): ");
@@ -308,19 +291,18 @@ public class UserManageView {
     }
 
     System.out.println(">> " + userService.togglePermission(target.getUserId(), target.getPermission()));
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
-    return;
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
   // 메시지 출력 후 엔터 대기
   // ─────────────────────────────────────────────────────
   private void waitBack() {
-    System.out.println(" 0. 뒤로가기");
-    System.out.print("선택: ");
-    scanner.nextLine();
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
+    }
   }
 
   // ─────────────────────────────────────────────────────
