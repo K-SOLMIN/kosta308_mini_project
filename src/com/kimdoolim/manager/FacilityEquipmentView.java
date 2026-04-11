@@ -28,17 +28,12 @@ public class FacilityEquipmentView {
   // 시설/비품 관리 메인 메뉴
   // ─────────────────────────────────────────────────────
   public void facilityEquipmentMenu() {
-    boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     while (true) {
       AppScanner.cls();
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.println("                       [ 시설/비품 관리 ]");
       System.out.println("──────────────────────────────────────────────────────────────────");
-      if (isAdmin) {
-        System.out.println(" 1.시설 관리 || 2.비품 관리 || 3.교시별 예약 차단 관리 || 0.뒤로 가기");
-      } else {
-        System.out.println(" 1.시설 관리 || 2.비품 관리 || 0.뒤로 가기");
-      }
+      System.out.println(" 1.시설 관리 || 2.비품 관리 || 0.뒤로 가기");
       System.out.println("──────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
@@ -47,10 +42,6 @@ public class FacilityEquipmentView {
       switch (choice) {
         case 1: facilityMenu(); break;
         case 2: equipmentMenu(); break;
-        case 3:
-          if (isAdmin) new BlockScheduleView().blockScheduleMenu();
-          else System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
-          break;
         case 0: return;
         default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
       }
@@ -140,7 +131,10 @@ public class FacilityEquipmentView {
   private void printFacilityTable() {
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Facility> list = isAdmin ? service.getAllFacilities() : service.getManagedFacilities();
-    if (list.isEmpty()) { System.out.println("등록된 시설이 없습니다."); return; }
+    if (list.isEmpty()) {
+      System.out.println(isAdmin ? "등록된 시설이 없습니다." : "관리중인 시설이 없습니다.");
+      return;
+    }
 
     String div = isAdmin ? "─".repeat(63) : "─".repeat(52);
     System.out.println(div);
@@ -183,7 +177,10 @@ public class FacilityEquipmentView {
   private void printEquipmentTable() {
     boolean isAdmin = Auth.getUserInfo().getPermission() == Permission.ADMIN;
     List<Equipment> list = isAdmin ? service.getAllEquipments() : service.getManagedEquipments();
-    if (list.isEmpty()) { System.out.println("등록된 비품이 없습니다."); return; }
+    if (list.isEmpty()) {
+      System.out.println(isAdmin ? "등록된 비품이 없습니다." : "관리중인 비품이 없습니다.");
+      return;
+    }
 
     String div = isAdmin ? "─".repeat(93) : "─".repeat(82);
     System.out.println(div);

@@ -53,6 +53,11 @@ public class UserManageView {
       return;
     }
 
+    printUserListTable(list);
+    waitBack();
+  }
+
+  private void printUserListTable(List<User> list) {
     String div = "─".repeat(70);
     System.out.println(div);
     System.out.println(
@@ -68,12 +73,7 @@ public class UserManageView {
     for (int i = 0; i < list.size(); i++) {
       User u = list.get(i);
       String permission = u.getPermission() == Permission.MIDDLEADMIN ? "중간 관리자" : "일반 사용자";
-      String status;
-      if (u.isActive()) {
-        status = "활성";
-      } else {
-        status = u.getUserStatus() != null ? u.getUserStatus() : "비활성";
-      }
+      String status = u.isActive() ? "활성" : (u.getUserStatus() != null ? u.getUserStatus() : "비활성");
       String gradeClass = u.getGradeNo() + "학년 " + u.getClassNo() + "반";
 
       System.out.println(
@@ -82,11 +82,10 @@ public class UserManageView {
               pad(u.getId(), 14)            + "  " +
               pad(gradeClass, 8)            + "  " +
               pad(permission, 12)           + "  " +
-              status    // active → status 로 변경
+              status
       );
     }
     System.out.println(div);
-    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
@@ -266,10 +265,15 @@ public class UserManageView {
   private void togglePermissionFlow() {
     AppScanner.cls();
     System.out.println("\n[권한 변경]");
-    showUserList();
 
     List<User> list = userService.getAllUsers();
-    if (list.isEmpty()) return;
+    if (list.isEmpty()) {
+      System.out.println("등록된 사용자가 없습니다.");
+      waitBack();
+      return;
+    }
+
+    printUserListTable(list);
 
     System.out.print("변경할 사용자 번호 (0: 뒤로): ");
     int index = readInt();

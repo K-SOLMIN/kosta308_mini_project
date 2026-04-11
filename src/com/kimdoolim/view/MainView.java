@@ -8,6 +8,7 @@ import com.kimdoolim.manager.BlockPeriodManageView;
 import com.kimdoolim.manager.BlockScheduleView;
 import com.kimdoolim.manager.FacilityEquipmentView;
 import com.kimdoolim.manager.ManagerReservationView;
+import com.kimdoolim.view.MainView;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -44,7 +45,7 @@ public class MainView {
 
             switch (readInt()) {
                 case 1: new ReservationView().reservationHistoryMenu(); break;
-                case 2: new MyPageView().myPageMenu(); break;
+                case 2: new com.kimdoolim.main.view.MyPageView().myPageMenu(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
                     return;
@@ -71,7 +72,7 @@ public class MainView {
             switch (readInt()) {
                 case 1: new ReservationView().reservationMenu(); break;
                 case 2: new ReservationView().reservationHistoryMenu(); break;
-                case 3: new MyPageView().myPageMenu(); break;
+                case 3: new com.kimdoolim.main.view.MyPageView().myPageMenu(); break;
                 case 4: new AlarmView().alarmMenu(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
@@ -100,7 +101,7 @@ public class MainView {
             switch (readInt()) {
                 case 1: new ReservationView().reservationMenu(); break;
                 case 2: new ReservationView().reservationHistoryMenu(); break;
-                case 3: new MyPageView().myPageMenu(); break;
+                case 3: new com.kimdoolim.main.view.MyPageView().myPageMenu(); break;
                 case 4: new AlarmView().alarmMenu(); break;
                 case 5: new ManagerReservationView().managerReservationMenu(); break;
                 case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;
@@ -132,7 +133,7 @@ public class MainView {
             switch (readInt()) {
                 case 1: new ReservationView().reservationMenu(); break;
                 case 2: new ReservationView().reservationHistoryMenu(); break;
-                case 3: new MyPageView().myPageMenu(); break;
+                case 3: new com.kimdoolim.main.view.MyPageView().myPageMenu(); break;
                 case 4: new AlarmView().alarmMenu(); break;
                 case 5: new ManagerReservationView().managerReservationMenu(); break;
                 case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;

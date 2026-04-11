@@ -205,7 +205,7 @@ public class BlockScheduleView {
     int type = readInt();
 
     if (type == 1) {
-      List<Facility> facilities = facilityEquipmentService.getAllFacilities();
+      List<Facility> facilities = facilityEquipmentService.getManagedFacilities();
       if (facilities.isEmpty()) { System.out.println("담당 시설이 없습니다."); waitBack(); return null; }
       System.out.println("\n── 시설 목록 ──");
       for (int i = 0; i < facilities.size(); i++) {
@@ -217,7 +217,7 @@ public class BlockScheduleView {
       return new Long[]{facilities.get(idx - 1).getFacilityId(), null};
 
     } else if (type == 2) {
-      List<Equipment> equipments = facilityEquipmentService.getAllEquipments();
+      List<Equipment> equipments = facilityEquipmentService.getManagedEquipments();
       if (equipments.isEmpty()) { System.out.println("담당 비품이 없습니다."); waitBack(); return null; }
       System.out.println("\n── 비품 목록 ──");
       for (int i = 0; i < equipments.size(); i++) {

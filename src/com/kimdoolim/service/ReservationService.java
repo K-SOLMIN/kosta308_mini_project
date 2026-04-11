@@ -177,6 +177,16 @@ public class ReservationService {
     return result > 0 ? "예약이 반려되었습니다." : "반려 처리 중 오류가 발생했습니다.";
   }
 
+  // 예약/반납 이력 조회 (권한에 따라 자동 분기)
+  public List<Reservation> getReservationHistory() {
+    User loginUser = Auth.getUserInfo();
+    if (loginUser.getPermission() == Permission.ADMIN) {
+      return reservationDAO.findReservationHistory(null);
+    } else {
+      return reservationDAO.findReservationHistory(loginUser.getUserId());
+    }
+  }
+
   // 예약 강제 취소
   public String forceCancelReservation(long reservationId, String reason) {
     int result = reservationDAO.forcecancelReservation(reservationId, reason);
