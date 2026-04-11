@@ -641,7 +641,7 @@ public class ReservationDAO {
           .reservationId(rs.getLong("reservation_id"))
           .reservationDate(rs.getDate("reservation_date").toLocalDate())
           .status(rs.getString("status"))
-          .reason(rs.getString("reason"))
+//          .reason(rs.getString("reason")) query문에 reason 컬럼안가져와서 에러남 query문을 수정하던지 이걸수정하던지 해야함
           .purpose(rs.getString("purpose"))
           .targetType(rs.getString("target_type"))
           .createdAt(rs.getTimestamp("created_at").toLocalDateTime())

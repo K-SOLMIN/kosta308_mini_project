@@ -107,8 +107,9 @@ public class UserService {
     if (!newPwd.equals(confirmPwd)) {
       return "새 비밀번호와 확인 비밀번호가 일치하지 않습니다.";
     }
-    if (newPwd.length() < 4) {
-      return "비밀번호는 4자 이상이어야 합니다.";
+    String pwdRegex = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[~!@#$%^&*()?]).{8,}$";
+    if (!newPwd.matches(pwdRegex)) {
+      return "비밀번호는 대문자·소문자·숫자·특수문자(~!@#$%^&*?)를 각 1개 이상 포함하고 8자 이상이어야 합니다.";
     }
     if (newPwd.equals(currentPwd)) {
       return "새 비밀번호가 현재 비밀번호와 동일합니다.";

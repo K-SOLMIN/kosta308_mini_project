@@ -87,7 +87,7 @@ public class AlarmScheduler {
         } else if (now.isBefore(endTime)) {
             // 10분 이내 → 남은 분 표시하여 즉시 발송
             long minutesLeft = Duration.between(now, endTime).toMinutes();
-            String msg = String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, minutesLeft);
+            String msg = String.format("🔔 [반납안내] '%s' 예약 종료 %d분 전입니다. 종료 이후 10분 이내에 반납해주세요.", resourceName, minutesLeft);
             alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), msg, "반납안내");
             System.out.println("🔔 [즉시 반납안내 발송] " + reservation.getUser().getName() + "님께 전송 완료");
         }
@@ -141,7 +141,7 @@ public class AlarmScheduler {
                 long actualMinutesLeft = Duration.between(LocalTime.now(), targetLocalTime).toMinutes();
                 String message = (type.equals("START"))
                         ? String.format("🔔 [사용안내] '%s' 사용시작 %d분 전입니다.", resourceName, actualMinutesLeft)
-                        : String.format("🔔 [반납안내] '%s' 반납 %d분 전입니다.", resourceName, actualMinutesLeft);
+                        : String.format("🔔 [반납안내] '%s' 예약 종료 %d분 전입니다. 종료 이후 10분 이내에 반납해주세요.", resourceName, actualMinutesLeft);
 
                 String alarmType = type.equals("START") ? "사용안내" : "반납안내";
                 alarmService.sendAndSaveAlarm(reservation.getUser().getUserId(), message, alarmType);
@@ -160,6 +160,8 @@ public class AlarmScheduler {
                 .plusMinutes(10);
         long delay = Duration.between(LocalDateTime.now(), endDateTime).getSeconds();
         if (delay < 0) delay = 3;
+
+        System.out.println("futureDelay : " + delay);
 
         return scheduler.schedule(() -> {
             try {

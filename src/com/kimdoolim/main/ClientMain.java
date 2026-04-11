@@ -4,8 +4,8 @@ import com.kimdoolim.alarm.AlarmReceiveThread;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.dto.Permission;
 import com.kimdoolim.dto.User;
-import com.kimdoolim.main.view.LoginView;
-import com.kimdoolim.main.view.MainView;
+import com.kimdoolim.view.LoginView;
+import com.kimdoolim.view.MainView;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
