@@ -269,7 +269,7 @@ public class ReservationDAO {
     ResultSet rs = null;
 
     // 시간 필터는 MySQL CURTIME() 대신 Java LocalTime으로 처리 (시간대 오차 방지)
-    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, " +
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
         "       r.purpose, r.target_type, r.created_at, " +
         "       u.name AS user_name, " +
         "       p.period_id, p.period_name, p.start_time, p.end_time, " +
@@ -538,7 +538,84 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 17. 제한 기간 체크
+  // 17. 만료된 대기 예약 자동 거절 (전체 사용자 대상)
+  //     교시 종료 시간이 지난 '대기' 상태 예약을 '거절'로 변경
+  // ─────────────────────────────────────────────────────
+  public int autoRejectExpiredPending() {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    int result = 0;
+
+    String sql = "UPDATE reservation r " +
+        "JOIN period p ON r.period_id = p.period_id " +
+        "SET r.status = '거절', r.reason = '예약 기간 만료 (자동 처리)' " +
+        "WHERE r.status = '대기' " +
+        "AND CONCAT(r.reservation_date, ' ', p.end_time) < NOW()";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      result = pstmt.executeUpdate();
+      if (result > 0) db.commit(conn);
+    } catch (SQLException e) {
+      db.rollback(conn);
+      // 자동 처리 오류는 사용자에게 노출하지 않음
+    } finally {
+      db.close(pstmt); db.close(conn);
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 18. 예약/반납 이력 전체 조회 (관리자용)
+  //     managerId = null → 상위관리자(전체)
+  //     managerId = 값   → 중간관리자(담당 시설/비품만)
+  // ─────────────────────────────────────────────────────
+  public List<Reservation> findReservationHistory(Integer managerId) {
+    List<Reservation> list = new ArrayList<>();
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    String managerCondition = (managerId != null)
+        ? "AND (f.manager_id = ? OR e.manager_id = ?) "
+        : "";
+
+    String sql = "SELECT r.reservation_id, r.reservation_date, r.status, r.reason, " +
+        "       r.purpose, r.target_type, r.created_at, " +
+        "       u.name AS user_name, " +
+        "       p.period_id, p.period_name, p.start_time, p.end_time, " +
+        "       f.name AS facility_name, " +
+        "       e.name AS equipment_name, " +
+        "       rr.created_at AS returned_at, " +
+        "       rr.`condition` AS return_condition " +
+        "FROM reservation r " +
+        "JOIN period p ON r.period_id = p.period_id " +
+        "JOIN user u ON r.user_id = u.user_id " +
+        "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+        "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        "LEFT JOIN return_request rr ON r.reservation_id = rr.reservation_id " +
+        "WHERE 1=1 " +
+        managerCondition +
+        "ORDER BY r.created_at DESC";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      if (managerId != null) {
+        pstmt.setInt(1, managerId);
+        pstmt.setInt(2, managerId);
+      }
+      rs = pstmt.executeQuery();
+      list = parseReservationResultSet(rs, null);
+    } catch (SQLException e) {
+      System.out.println("이력 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return list;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 19. 제한 기간 체크
   //     - period_id IS NULL  → 종일 제한 (교시 무관)
   //     - period_id = 해당 교시 → 해당 교시만 제한
   // ─────────────────────────────────────────────────────
@@ -613,7 +690,7 @@ public class ReservationDAO {
           .reservationId(rs.getLong("reservation_id"))
           .reservationDate(rs.getDate("reservation_date").toLocalDate())
           .status(rs.getString("status"))
-//          .reason(rs.getString("reason")) query문에 reason 컬럼안가져와서 에러남 query문을 수정하던지 이걸수정하던지 해야함
+          .reason(hasColumn(rs, "reason") ? rs.getString("reason") : null)
           .purpose(rs.getString("purpose"))
           .targetType(rs.getString("target_type"))
           .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
@@ -623,6 +700,7 @@ public class ReservationDAO {
           .user(user)
           .returnedAt(hasColumn(rs, "returned_at") && rs.getTimestamp("returned_at") != null
               ? rs.getTimestamp("returned_at").toLocalDateTime() : null)
+          .returnCondition(hasColumn(rs, "return_condition") ? rs.getString("return_condition") : null)
           .build());
     }
     return list;

@@ -1,4 +1,4 @@
-package com.kimdoolim.view;
+package com.kimdoolim.main.view;
 
 import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;
@@ -41,7 +41,7 @@ public class MyPageView {
   // 내 정보 출력
   // ─────────────────────────────────────────────────────
   private void printUserInfo(User u) {
-    String permission = u.getPermission() == Permission.ADMIN ? "최상위 관리자"
+    String permission = u.getPermission() == Permission.ADMIN      ? "최상위 관리자"
         : u.getPermission() == Permission.MIDDLEADMIN ? "중간 관리자"
         : "일반 사용자";
     System.out.println(" 이름    : " + u.getName());
@@ -61,7 +61,7 @@ public class MyPageView {
     System.out.print("현재 비밀번호: ");
     String currentPwd = scanner.nextLine().trim();
 
-    System.out.print("새 비밀번호[대문자,소문자,숫자,특수문자(~!@#$%^&*?) 포함 8글자]: ");
+    System.out.print("새 비밀번호: ");
     String newPwd = scanner.nextLine().trim();
 
     System.out.print("새 비밀번호 확인: ");
@@ -69,13 +69,15 @@ public class MyPageView {
 
     String msg = userService.changePassword(currentPwd, newPwd, confirmPwd);
     System.out.println(">> " + msg);
+    waitBack();
+  }
 
-      try {
-          Thread.sleep(1500);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-          throw new RuntimeException(e);
-      }
+  private void waitBack() {
+    while (true) {
+      System.out.println(" 0. 뒤로가기");
+      System.out.print("선택: ");
+      if ("0".equals(scanner.nextLine().trim())) return;
+    }
   }
 
   private int readInt() {
