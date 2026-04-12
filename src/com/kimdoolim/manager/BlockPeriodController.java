@@ -421,4 +421,24 @@ public class BlockPeriodController {
         finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
         return list;
     }
+
+    // ─────────────────────────────────────────────────────
+    // 11. 교시 등록
+    // ─────────────────────────────────────────────────────
+    public int savePeriod(String name, java.time.LocalTime startTime, java.time.LocalTime endTime) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        int result = 0;
+        try {
+            pstmt = conn.prepareStatement(
+                "INSERT INTO period (period_name, start_time, end_time) VALUES (?, ?, ?)");
+            pstmt.setString(1, name);
+            pstmt.setTime(2, Time.valueOf(startTime));
+            pstmt.setTime(3, Time.valueOf(endTime));
+            result = pstmt.executeUpdate();
+            mysql.commit(conn);
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(pstmt); mysql.close(conn); }
+        return result;
+    }
 }
