@@ -26,7 +26,7 @@ public class BlockScheduleView {
   private final Scanner scanner = AppScanner.getScanner();
 
   private static final String[] DAY_NAMES = {"", "일", "월", "화", "수", "목", "금", "토"};
-  private static final String SEP = "─".repeat(70);
+  private static final String SEP = "─".repeat(74);
 
   public void blockScheduleMenu() {
     while (true) {
@@ -65,7 +65,7 @@ public class BlockScheduleView {
     System.out.println(SEP);
     System.out.println(
         fit("ID", 4) + " " + fit("유형", 8) + " " +
-        fit("날짜/요일", 28) + " " + fit("교시", 8) + " " + "사유");
+        fit("날짜/요일", 32) + " " + fit("교시", 8) + " " + "사유");
     System.out.println(SEP);
 
     for (Map<String, Object> m : list) {
@@ -80,7 +80,7 @@ public class BlockScheduleView {
       }
       System.out.println(
           fit(m.get("id").toString(), 4) + " " + fit(type, 8) + " " +
-          fit(dateInfo, 28) + " " + fit(m.get("periodName").toString(), 8) + " " +
+          fit(dateInfo, 32) + " " + fit(m.get("periodName").toString(), 8) + " " +
           m.get("desc"));
     }
     System.out.println(SEP);
@@ -244,7 +244,7 @@ public class BlockScheduleView {
 
     System.out.println(
         fit("ID", 4) + " " + fit("유형", 8) + " " +
-        fit("날짜/요일", 28) + " " + fit("교시", 8) + " " + "사유");
+        fit("날짜/요일", 32) + " " + fit("교시", 8) + " " + "사유");
     System.out.println(SEP);
 
     for (Map<String, Object> m : list) {
@@ -259,7 +259,7 @@ public class BlockScheduleView {
       }
       System.out.println(
           fit(m.get("id").toString(), 4) + " " + fit(type, 8) + " " +
-          fit(dateInfo, 28) + " " + fit(m.get("periodName").toString(), 8) + " " +
+          fit(dateInfo, 32) + " " + fit(m.get("periodName").toString(), 8) + " " +
           m.get("desc"));
 
       long scheduleId = (long) m.get("id");

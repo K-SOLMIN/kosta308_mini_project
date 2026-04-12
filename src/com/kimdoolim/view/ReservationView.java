@@ -168,13 +168,13 @@ public class ReservationView {
       return;
     }
 
-    // 번호(4) 예약날짜(12) 교시(시작~종료)(22) 구분(4) 시설/비품명(16) = 4+1+12+1+22+1+4+1+16 = 62
-    String sep = "─".repeat(62);
+    // 번호(4) 예약날짜(12) 교시(시작~종료)(24) 구분(4) 시설/비품명(16) = 4+1+12+1+24+1+4+1+16 = 64
+    String sep = "─".repeat(64);
     System.out.println(sep);
     System.out.println(
         fit("번호", 4) + " " +
         fit("예약날짜", 12) + " " +
-        fit("교시 (시작~종료)", 22) + " " +
+        fit("교시 (시작~종료)", 24) + " " +
         fit("구분", 4) + " " +
         fit("시설/비품명", 16)
     );
@@ -186,13 +186,15 @@ public class ReservationView {
           ? (r.getFacility() != null ? r.getFacility().getName() : "-")
           : (r.getEquipment() != null ? r.getEquipment().getName() : "-");
 
+      DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HH:mm");
       String periodDisplay = r.getPeriod().getPeriodName()
-          + " (" + r.getPeriod().getStartTime() + "~" + r.getPeriod().getEndTime() + ")";
+          + " (" + r.getPeriod().getStartTime().format(hhmm)
+          + "~" + r.getPeriod().getEndTime().format(hhmm) + ")";
 
       System.out.println(
           fit(String.valueOf(i + 1), 4) + " " +
           fit(r.getReservationDate().toString(), 12) + " " +
-          fit(periodDisplay, 22) + " " +
+          fit(periodDisplay, 24) + " " +
           fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + " " +
           fit(targetName, 16)
       );
