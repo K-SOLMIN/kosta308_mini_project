@@ -268,31 +268,21 @@ public class BlockPeriodController {
     // ─────────────────────────────────────────────────────
     // 7. 삭제 — detail 먼저 삭제 후 master 삭제 (FK 오류 방지)
     // ─────────────────────────────────────────────────────
-    public int deleteBlockMasterByDesc(String desc) {
+    public int deleteBlockMasterById(long id) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
         try {
-            // 7-1. master id 조회
-            pstmt = conn.prepareStatement(
-                "SELECT block_period_id FROM block_period WHERE block_period_description = ?");
-            pstmt.setString(1, desc);
-            ResultSet rs = pstmt.executeQuery();
-            if (!rs.next()) { mysql.close(rs); return 0; }
-            long masterId = rs.getLong("block_period_id");
-            mysql.close(rs);
-            mysql.close(pstmt);
-
-            // 7-2. detail 먼저 삭제
+            // detail 먼저 삭제
             pstmt = conn.prepareStatement(
                 "DELETE FROM block_period_detail WHERE block_period_id = ?");
-            pstmt.setLong(1, masterId);
+            pstmt.setLong(1, id);
             pstmt.executeUpdate();
             mysql.close(pstmt);
 
-            // 7-3. master 삭제
+            // master 삭제
             pstmt = conn.prepareStatement(
                 "DELETE FROM block_period WHERE block_period_id = ?");
-            pstmt.setLong(1, masterId);
+            pstmt.setLong(1, id);
             int res = pstmt.executeUpdate();
 
             mysql.commit(conn);

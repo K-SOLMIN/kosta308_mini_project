@@ -421,23 +421,24 @@ public class BlockPeriodManageView {
         searchAllBlockPeriods();
 
         try {
-            String desc = ask("삭제할 일정 명칭 입력");
-            Map<String, Object> target = controller.getBlockPeriodByDescription(desc);
+            long id = askLong("삭제할 일정 ID");
+            Map<String, Object> target = controller.getBlockPeriodById(id);
             if (target == null) {
-                System.out.println("존재하지 않는 일정입니다.");
+                System.out.println("존재하지 않는 일정 ID입니다.");
                 waitForBack();
                 return;
             }
 
             System.out.println("\n── 삭제 대상 " + SEP2.substring(5));
-            System.out.println(" 명칭  : " + desc);
+            System.out.println(" ID    : " + id);
+            System.out.println(" 명칭  : " + target.get("desc"));
             System.out.println(" 기간  : " + target.get("start") + " ~ " + target.get("end"));
             System.out.println("  ※ 관련 차단 상세 정보도 모두 삭제됩니다.");
             System.out.println(SEP2);
             System.out.print("삭제하시겠습니까? (Y/N): ");
 
             if (scanner.nextLine().trim().toUpperCase().equals("Y")) {
-                if (controller.deleteBlockMasterByDesc(desc) > 0)
+                if (controller.deleteBlockMasterById(id) > 0)
                     System.out.println(">> 삭제가 완료되었습니다.");
                 else
                     System.out.println(">> 삭제에 실패했습니다. 다시 시도해주세요.");
