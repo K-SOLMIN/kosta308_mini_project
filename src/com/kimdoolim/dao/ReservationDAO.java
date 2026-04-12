@@ -136,7 +136,7 @@ public class ReservationDAO {
 
     String sql = "SELECT COUNT(*) FROM reservation " +
         "WHERE reservation_date = ? AND period_id = ? " +
-        "AND status NOT IN ('거절', '취소') " +
+        "AND status IN ('승인', '반납완료') " +
         "AND (" +
         "    (target_type = 'FACILITY' AND facility_id = ?)" +
         "    OR (target_type = 'EQUIPMENT' AND equipment_id = ?)" +
