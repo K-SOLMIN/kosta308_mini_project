@@ -246,7 +246,42 @@ public class BlockScheduleDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 8. 적용된 시설/비품 목록 조회 (표시용)
+  // 8. 단건 조회 (취소 로직에서 블록 정보 가져올 때 사용)
+  // ─────────────────────────────────────────────────────
+  public Map<String, Object> getById(long blockScheduleId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+    Map<String, Object> map = null;
+
+    String sql = "SELECT block_schedule_id, block_date, repeat_day_of_week, " +
+        "repeat_start_date, repeat_end_date, period_id, description " +
+        "FROM block_schedule WHERE block_schedule_id = ?";
+
+    try {
+      pstmt = conn.prepareStatement(sql);
+      pstmt.setLong(1, blockScheduleId);
+      rs = pstmt.executeQuery();
+      if (rs.next()) {
+        map = new HashMap<>();
+        map.put("id",          rs.getLong("block_schedule_id"));
+        map.put("date",        rs.getDate("block_date") != null ? rs.getDate("block_date").toLocalDate() : null);
+        map.put("repeatDay",   rs.getObject("repeat_day_of_week"));
+        map.put("repeatStart", rs.getDate("repeat_start_date") != null ? rs.getDate("repeat_start_date").toLocalDate() : null);
+        map.put("repeatEnd",   rs.getDate("repeat_end_date") != null ? rs.getDate("repeat_end_date").toLocalDate() : null);
+        map.put("periodId",    rs.getInt("period_id"));
+        map.put("desc",        rs.getString("description"));
+      }
+    } catch (SQLException e) {
+      System.out.println("단건 조회 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return map;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 9. 적용된 시설/비품 목록 조회 (표시용)
   //    isAll: 전체 시설+비품 수와 일치하면 true
   // ─────────────────────────────────────────────────────
   public Map<String, Object> getBlockDetailsForDisplay(long blockScheduleId) {
