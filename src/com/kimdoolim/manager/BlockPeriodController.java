@@ -11,14 +11,19 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class BlockPeriodController {
-    private static final BlockPeriodController instance = new BlockPeriodController();
+    //private static final BlockPeriodController instance = new BlockPeriodController();
     private final Database mysql = MySql.getMySql();
 
     private final ReservationDAO reservationDAO = new ReservationDAO();
+
     private final AlarmSendingManager sendingManager = AlarmSendingManager.getAlarmSendingManager();
 
+    private static final BlockPeriodController blockPeriodController = new BlockPeriodController();
+
     private BlockPeriodController() {}
-    public static BlockPeriodController getBlockPeriodController() { return instance; }
+    public static BlockPeriodController getBlockPeriodController() {
+        return blockPeriodController;
+    }
 
     // ─────────────────────────────────────────────────────
     // 1. 목록 조회 (교시명 포함)
