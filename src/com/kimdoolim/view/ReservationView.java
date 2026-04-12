@@ -168,15 +168,15 @@ public class ReservationView {
       return;
     }
 
-    // 번호(4) 예약날짜(12) 교시(시작~종료)(24) 구분(4) 시설/비품명(16) = 4+1+12+1+24+1+4+1+16 = 64
-    String sep = "─".repeat(64);
+    // 번호(4) 예약날짜(12) 교시(시작~종료)(28) 구분(4) 시설/비품명(20) = 4+1+12+1+28+1+4+1+20 = 72
+    String sep = "─".repeat(72);
     System.out.println(sep);
     System.out.println(
         fit("번호", 4) + " " +
         fit("예약날짜", 12) + " " +
-        fit("교시 (시작~종료)", 24) + " " +
+        fit("교시 (시작~종료)", 28) + " " +
         fit("구분", 4) + " " +
-        fit("시설/비품명", 16)
+        fit("시설/비품명", 20)
     );
     System.out.println(sep);
 
@@ -194,9 +194,9 @@ public class ReservationView {
       System.out.println(
           fit(String.valueOf(i + 1), 4) + " " +
           fit(r.getReservationDate().toString(), 12) + " " +
-          fit(periodDisplay, 24) + " " +
+          fit(periodDisplay, 28) + " " +
           fit(r.getTargetType().equals("FACILITY") ? "시설" : "비품", 4) + " " +
-          fit(targetName, 16)
+          fit(targetName, 20)
       );
     }
     System.out.println(sep);
