@@ -656,6 +656,102 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
+  // 20. 제한 일정으로 인한 예약 일괄 취소
+  //     facilityId, equipmentId 둘 다 null → 전체 시설/비품 대상
+  //     periodId null → 해당 기간 모든 교시 대상
+  // ─────────────────────────────────────────────────────
+  public List<Reservation> cancelReservationsForBlockPeriod(
+      LocalDate startDate, LocalDate endDate, Integer periodId,
+      Long facilityId, Long equipmentId, String cancelReason) {
+
+    List<Reservation> cancelled = new ArrayList<>();
+
+    // SELECT용 WHERE (테이블 alias 사용)
+    StringBuilder selectWhere = new StringBuilder(
+        " WHERE r.reservation_date BETWEEN ? AND ? AND r.status IN ('대기', '승인')");
+    if (periodId != null)         selectWhere.append(" AND r.period_id = ?");
+    if (facilityId != null)       selectWhere.append(" AND r.target_type = 'FACILITY' AND r.facility_id = ?");
+    else if (equipmentId != null) selectWhere.append(" AND r.target_type = 'EQUIPMENT' AND r.equipment_id = ?");
+
+    String selectSql = "SELECT r.reservation_id, r.user_id, u.name AS user_name, " +
+        "r.target_type, COALESCE(f.name, e.name) AS resource_name " +
+        "FROM reservation r " +
+        "JOIN user u ON r.user_id = u.user_id " +
+        "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+        "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        selectWhere;
+
+    // UPDATE용 WHERE (alias 없음)
+    StringBuilder updateWhere = new StringBuilder(
+        " WHERE reservation_date BETWEEN ? AND ? AND status IN ('대기', '승인')");
+    if (periodId != null)         updateWhere.append(" AND period_id = ?");
+    if (facilityId != null)       updateWhere.append(" AND target_type = 'FACILITY' AND facility_id = ?");
+    else if (equipmentId != null) updateWhere.append(" AND target_type = 'EQUIPMENT' AND equipment_id = ?");
+
+    String updateSql = "UPDATE reservation SET status = '취소', reason = ?" + updateWhere;
+
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    try {
+      // 1. 취소 대상 예약 조회
+      pstmt = conn.prepareStatement(selectSql);
+      int idx = 1;
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      if (periodId != null)         pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        String targetType = rs.getString("target_type");
+        String resourceName = rs.getString("resource_name");
+        User user = User.builder()
+            .userId(rs.getInt("user_id"))
+            .name(rs.getString("user_name"))
+            .build();
+        Facility facility = "FACILITY".equals(targetType)
+            ? Facility.builder().name(resourceName).build() : null;
+        Equipment equipment = "EQUIPMENT".equals(targetType)
+            ? Equipment.builder().name(resourceName).build() : null;
+        cancelled.add(Reservation.builder()
+            .reservationId(rs.getLong("reservation_id"))
+            .user(user)
+            .facility(facility)
+            .equipment(equipment)
+            .build());
+      }
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      if (cancelled.isEmpty()) return cancelled;
+
+      // 2. 일괄 취소 UPDATE
+      pstmt = conn.prepareStatement(updateSql);
+      idx = 1;
+      pstmt.setString(idx++, cancelReason);
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      if (periodId != null)         pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      pstmt.executeUpdate();
+      db.commit(conn);
+
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("제한 일정 예약 일괄 취소 실패: " + e.getMessage());
+      cancelled.clear();
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return cancelled;
+  }
+
+  // ─────────────────────────────────────────────────────
   // ResultSet → Reservation 객체 변환 공통 메서드
   // ─────────────────────────────────────────────────────
   private List<Reservation> parseReservationResultSet(ResultSet rs, Integer userId) throws SQLException {

@@ -23,7 +23,7 @@ public class AlarmSendingManager {
             return;
         }
 
-        System.out.println("[AlarmSendingManager] 전송 시도: type=" + type + ", param=" + parameter);
+        //System.out.println("[AlarmSendingManager] 전송 시도: type=" + type + ", param=" + parameter);
         if(type.equals("예약요청")) ClientMain.out.println("REQUEST_RESERVATION:" + parameter); //parameter -> reservationId
         else if(type.equals("취소")) ClientMain.out.println("CANCEL:" + parameter); //parameter -> reservationId
         else if(type.equals("사용시작")) ClientMain.out.println("USE_START:" + parameter); //parameter -> reservationId  (콜론 추가)

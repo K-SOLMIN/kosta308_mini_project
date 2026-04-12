@@ -114,16 +114,18 @@ public class SocketSession extends Thread {
 
         AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
 
-        if ("ADMIN".equals(cancelType)) {
+        if ("ADMIN".equals(cancelType) || "BLOCK".equals(cancelType)) {
             int userId = reservation.getUser().getUserId();
             String targetType = reservation.getFacility() != null ? "시설" : "비품";
             String targetName = reservation.getFacility() != null
                     ? reservation.getFacility().getName()
                     : reservation.getEquipment().getName();
 
-            String msg = "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 관리자에 의해 취소되었습니다.";
+            String msg = "BLOCK".equals(cancelType)
+                    ? "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 제한 일정으로 인해 자동 취소되었습니다."
+                    : "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 관리자에 의해 취소되었습니다.";
             alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
-            System.out.println("❌ [관리자 강제취소] 예약 ID: " + resId + " → 사용자 " + userId + " 알림 완료");
+            System.out.println("❌ [" + cancelType + " 취소] 예약 ID: " + resId + " → 사용자 " + userId + " 알림 완료");
         } else {
             System.out.println("❌ [사용자 취소] 예약 ID: " + resId + " 스케줄만 취소");
         }

@@ -1,7 +1,10 @@
 package com.kimdoolim.manager;
 
+import com.kimdoolim.alarm.AlarmSendingManager;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
+import com.kimdoolim.dao.ReservationDAO;
+import com.kimdoolim.dto.Reservation;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -10,6 +13,9 @@ import java.util.*;
 public class BlockPeriodController {
     private static final BlockPeriodController instance = new BlockPeriodController();
     private final Database mysql = MySql.getMySql();
+
+    private final ReservationDAO reservationDAO = new ReservationDAO();
+    private final AlarmSendingManager sendingManager = AlarmSendingManager.getAlarmSendingManager();
 
     private BlockPeriodController() {}
     public static BlockPeriodController getBlockPeriodController() { return instance; }
@@ -92,6 +98,8 @@ public class BlockPeriodController {
             mysql.commit(conn);
         } catch (SQLException e) { mysql.rollback(conn); }
         finally { mysql.close(pstmt); mysql.close(conn); }
+
+        if (count > 0) cancelAndNotifyForBlock(masterId, null, null);
         return count;
     }
 
@@ -104,15 +112,47 @@ public class BlockPeriodController {
         String sql = type.equals("F")
             ? "INSERT INTO block_period_detail (block_period_id, facility_id) VALUES (?, ?)"
             : "INSERT INTO block_period_detail (block_period_id, equipment_id) VALUES (?, ?)";
+        int res = 0;
         try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setLong(1, masterId);
             pstmt.setLong(2, targetId);
-            int res = pstmt.executeUpdate();
+            res = pstmt.executeUpdate();
             mysql.commit(conn);
-            return res;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
+        } catch (SQLException e) { mysql.rollback(conn); }
         finally { mysql.close(pstmt); mysql.close(conn); }
+
+        if (res > 0) {
+            Long facilityId  = type.equals("F") ? targetId : null;
+            Long equipmentId = type.equals("E") ? targetId : null;
+            cancelAndNotifyForBlock(masterId, facilityId, equipmentId);
+        }
+        return res;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 제한 일정 등록 후 겹치는 예약 취소 + 사용자 알림
+    // ─────────────────────────────────────────────────────
+    private void cancelAndNotifyForBlock(long masterId, Long facilityId, Long equipmentId) {
+        Map<String, Object> info = getBlockPeriodById(masterId);
+        if (info == null) return;
+
+        LocalDate start    = (LocalDate) info.get("start");
+        LocalDate end      = (LocalDate) info.get("end");
+        Integer periodId   = (Integer)   info.get("periodId");
+        String desc        = (String)    info.get("desc");
+
+        String reason = "제한 일정(" + desc + ")으로 인한 자동 취소";
+        List<Reservation> cancelled = reservationDAO.cancelReservationsForBlockPeriod(
+            start, end, periodId, facilityId, equipmentId, reason);
+
+        for (Reservation r : cancelled) {
+            sendingManager.sendingTextToSocketServer("취소", r.getReservationId(), "BLOCK");
+        }
+
+        if (!cancelled.isEmpty()) {
+            System.out.println("🚫 [제한 일정] " + cancelled.size() + "건의 예약이 자동 취소되었습니다.");
+        }
     }
 
     // ─────────────────────────────────────────────────────
