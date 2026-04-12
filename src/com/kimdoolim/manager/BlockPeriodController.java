@@ -302,6 +302,59 @@ public class BlockPeriodController {
     }
 
     // ─────────────────────────────────────────────────────
+    // 7. 적용 대상 조회 (시설/비품 이름 목록 + 전체 여부)
+    // ─────────────────────────────────────────────────────
+    public Map<String, Object> getBlockDetailsForDisplay(long masterId) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<String> facilities = new ArrayList<>();
+        List<String> equipments = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 적용된 시설/비품 이름 조회
+            String sql = "SELECT f.name AS facility_name, e.name AS equipment_name " +
+                "FROM block_period_detail bpd " +
+                "LEFT JOIN facility f ON bpd.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON bpd.equipment_id = e.equipment_id " +
+                "WHERE bpd.block_period_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, masterId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String fn = rs.getString("facility_name");
+                String en = rs.getString("equipment_name");
+                if (fn != null) facilities.add(fn);
+                if (en != null) equipments.add(en);
+            }
+            mysql.close(rs); rs = null;
+            mysql.close(pstmt); pstmt = null;
+
+            // 전체 시설/비품 수 조회 → 전체 적용 여부 판단
+            pstmt = conn.prepareStatement(
+                "SELECT (SELECT COUNT(*) FROM facility WHERE is_delete = 'false') AS tf, " +
+                "(SELECT COUNT(*) FROM equipment WHERE check_delete = 'false') AS te");
+            rs = pstmt.executeQuery();
+            boolean isAll = false;
+            if (rs.next()) {
+                int totalF = rs.getInt("tf");
+                int totalE = rs.getInt("te");
+                isAll = totalF + totalE > 0
+                    && facilities.size() == totalF
+                    && equipments.size() == totalE;
+            }
+
+            result.put("isAll", isAll);
+            result.put("facilities", facilities);
+            result.put("equipments", equipments);
+
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────
     // 8. 시설 목록 조회 (id, name, location)
     // ─────────────────────────────────────────────────────
     public List<Map<String, Object>> getAllFacilities() {

@@ -86,7 +86,7 @@ public class BlockPeriodManageView {
             System.out.println("                      [ 제한기간 관리 ]");
             System.out.println(SEP);
             System.out.println(" 1.목록 조회 || 2.일정 생성 || 3.대상 적용 || 4.일정 수정 || 5.일정 삭제");
-            System.out.println(" 6.교시별 예약 차단 관리 || 0.뒤로 가기");
+            System.out.println(" 6.적용 대상 조회 || 7.교시별 예약 차단 관리 || 0.뒤로 가기");
             System.out.println(SEP);
             System.out.print("메뉴 선택: ");
 
@@ -103,7 +103,8 @@ public class BlockPeriodManageView {
                 case 3: enrollBlockDetailView(); break;
                 case 4: updateBlockPeriodView(); break;
                 case 5: deleteBlockPeriodView(); break;
-                case 6: new BlockScheduleView().blockScheduleMenu(); break;
+                case 6: showBlockAppliedView(); break;
+                case 7: new BlockScheduleView().blockScheduleMenu(); break;
                 case 0: return;
                 default: System.out.println("잘못된 입력입니다.");
             }
@@ -346,6 +347,68 @@ public class BlockPeriodManageView {
             System.out.println(">> 입력이 취소되었습니다.");
             waitForBack();
         }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 6. 적용 대상 조회
+    // ─────────────────────────────────────────────────────
+    @SuppressWarnings("unchecked")
+    private void showBlockAppliedView() {
+        AppScanner.cls();
+        System.out.println("\n[제한 일정 적용 대상 조회]");
+        List<Map<String, Object>> list = controller.getAllBlockMasters();
+
+        System.out.println(SEP);
+        if (list.isEmpty()) {
+            System.out.println("  등록된 제한 일정이 없습니다.");
+            System.out.println(SEP);
+            waitForBack();
+            return;
+        }
+
+        System.out.println(
+            fit("ID", 4) + "  " +
+            fit("명칭", 22) + "  " +
+            fit("시작일", 12) + "  " +
+            fit("종료일", 12) + "  " +
+            "교시"
+        );
+        System.out.println(SEP);
+
+        for (Map<String, Object> m : list) {
+            String periodName = m.get("periodName") != null ? (String) m.get("periodName") : "종일";
+            System.out.println(
+                fit(m.get("id").toString(), 4) + "  " +
+                fit((String) m.get("desc"), 22) + "  " +
+                fit(m.get("start").toString(), 12) + "  " +
+                fit(m.get("end").toString(), 12) + "  " +
+                periodName
+            );
+
+            long masterId = (long) m.get("id");
+            Map<String, Object> details = controller.getBlockDetailsForDisplay(masterId);
+            boolean isAll = (boolean) details.get("isAll");
+            List<String> facilities = (List<String>) details.get("facilities");
+            List<String> equipments = (List<String>) details.get("equipments");
+
+            if (isAll) {
+                System.out.println("      └ 전체 시설/비품 적용");
+            } else if (facilities.isEmpty() && equipments.isEmpty()) {
+                System.out.println("      └ 적용된 시설/비품 없음");
+            } else {
+                boolean hasBoth = !facilities.isEmpty() && !equipments.isEmpty();
+                if (!facilities.isEmpty()) {
+                    String prefix = hasBoth ? "├" : "└";
+                    System.out.println("      " + prefix + " [시설] " + String.join(" / ", facilities));
+                }
+                if (!equipments.isEmpty()) {
+                    System.out.println("      └ [비품] " + String.join(" / ", equipments));
+                }
+            }
+            System.out.println(SEP);
+        }
+
+        waitForBack();
     }
 
     // ─────────────────────────────────────────────────────
