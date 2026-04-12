@@ -19,7 +19,7 @@ public class UserManageView {
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.println("                        [ 사용자 관리 ]");
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
-      System.out.println(" 1.목록 조회 || 2.사용자 등록 || 3.휴직 || 4.복직 || 5.전근 || 6.전근 승인 || 7.권한 변경 || 0.뒤로 가기");
+      System.out.println(" 1.목록 조회 || 2.사용자 등록 || 3.사용자 상태변경 || 4.권한 변경 || 0.뒤로 가기");
       System.out.println("───────────────────────────────────────────────────────────────────────────────────────────────");
       System.out.print("메뉴 선택: ");
 
@@ -28,11 +28,8 @@ public class UserManageView {
       switch (choice) {
         case 1: showUserList(); break;
         case 2: registerUserFlow(); break;
-        case 3: leaveFlow(); break;
-        case 4: restoreFlow(); break;
-        case 5: transferFlow(); break;
-        case 6: approveTransferFlow(); break;
-        case 7: togglePermissionFlow(); break;
+        case 3: changeUserStatusFlow(); break;
+        case 4: togglePermissionFlow(); break;
         case 0: return;
         default: System.out.println("잘못된 입력입니다.");
       }
@@ -145,103 +142,47 @@ public class UserManageView {
   }
 
   // ─────────────────────────────────────────────────────
-  // 3. 휴직 처리
+  // 3. 사용자 상태변경
   // ─────────────────────────────────────────────────────
-  private void leaveFlow() {
+  private void changeUserStatusFlow() {
     AppScanner.cls();
-    System.out.println("\n[휴직 처리]");
-    User target = selectActiveUser();
-    if (target == null) return;
+    System.out.println("\n[사용자 상태변경]");
 
-    System.out.print("휴직 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
-    System.out.println(">> " + userService.setLeaveOfAbsence(target.getUserId()));
-    waitBack();
-  }
+    List<User> list = userService.getAllUsers();
+    if (list.isEmpty()) { System.out.println("등록된 사용자가 없습니다."); waitBack(); return; }
+    printUserListTable(list);
 
-  // ─────────────────────────────────────────────────────
-  // 4. 복직 처리 (휴직자만)
-  // ─────────────────────────────────────────────────────
-  private void restoreFlow() {
-    AppScanner.cls();
-    System.out.println("\n[복직 처리]");
-    List<User> list = userService.getAllUsers().stream()
-        .filter(u -> "휴직".equals(u.getUserStatus()))
-        .collect(java.util.stream.Collectors.toList());
-
-    if (list.isEmpty()) { System.out.println("휴직 중인 사용자가 없습니다."); waitBack(); return; }
-
-    printUserSubList(list);
-    System.out.print("복직할 번호 (0: 뒤로): ");
+    System.out.print("사용자 번호 입력 (0: 뒤로): ");
     int index = readInt();
     if (index == 0) return;
     if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); waitBack(); return; }
-
-    System.out.print("복직 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
-    System.out.println(">> " + userService.restoreFromLeave(list.get(index - 1).getUserId()));
-    waitBack();
-  }
-
-  // ─────────────────────────────────────────────────────
-  // 5. 전근 처리
-  // ─────────────────────────────────────────────────────
-  private void transferFlow() {
-    AppScanner.cls();
-    System.out.println("\n[전근 처리]");
-    User target = selectActiveUser();
-    if (target == null) return;
-
-    System.out.println("※ 전근 처리 시 해당 사용자는 비활성화되며, 새 학교 관리자의 승인이 필요합니다.");
-    System.out.print("전근 처리하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
-    System.out.println(">> " + userService.setTransfer(target.getUserId()));
-    waitBack();
-  }
-
-  // ─────────────────────────────────────────────────────
-  // 6. 전근 승인 (전근 상태인 사용자 활성화)
-  // ─────────────────────────────────────────────────────
-  private void approveTransferFlow() {
-    AppScanner.cls();
-    System.out.println("\n[전근 승인]");
-    List<User> list = userService.getAllUsers().stream()
-        .filter(u -> "전근".equals(u.getUserStatus()))
-        .collect(java.util.stream.Collectors.toList());
-
-    if (list.isEmpty()) { System.out.println("전근 승인 대기 중인 사용자가 없습니다."); waitBack(); return; }
-
-    printUserSubList(list);
-    System.out.print("승인할 번호 (0: 뒤로): ");
-    int index = readInt();
-    if (index == 0) return;
-    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); waitBack(); return; }
-
-    System.out.print("승인하시겠습니까? (Y/N): ");
-    if (!scanner.nextLine().trim().toUpperCase().equals("Y")) { System.out.println("취소되었습니다."); waitBack(); return; }
-    System.out.println(">> " + userService.approveTransfer(list.get(index - 1).getUserId()));
-    waitBack();
-  }
-
-  // ─────────────────────────────────────────────────────
-  // 활성 사용자 선택 공통 헬퍼
-  // ─────────────────────────────────────────────────────
-  private User selectActiveUser() {
-    List<User> list = userService.getAllUsers().stream()
-        .filter(User::isActive)
-        .collect(java.util.stream.Collectors.toList());
-
-    if (list.isEmpty()) { System.out.println("활성 사용자가 없습니다."); waitBack(); return null; }
-
-    printUserSubList(list);
-    System.out.print("번호 선택 (0: 뒤로): ");
-    int index = readInt();
-    if (index == 0) return null;
-    if (index < 1 || index > list.size()) { System.out.println("잘못된 번호입니다."); return null; }
 
     User target = list.get(index - 1);
-    System.out.println("대상: " + target.getName() + " (" + target.getId() + ")");
-    return target;
+
+    String currentStatus = target.isActive() ? "활성" : (target.getUserStatus() != null ? target.getUserStatus() : "비활성");
+    System.out.println("──────────────────────────────────────");
+    System.out.println(" 이름  : " + target.getName());
+    System.out.println(" 아이디: " + target.getId());
+    System.out.println(" 현재  : " + currentStatus);
+    System.out.println("──────────────────────────────────────");
+    System.out.println(" 1. 휴직처리");
+    System.out.println(" 2. 복직처리");
+    System.out.println(" 3. 전근처리");
+    System.out.println(" 0. 뒤로");
+    System.out.println("──────────────────────────────────────");
+    System.out.print("처리할 번호를 입력하세요: ");
+    int action = readInt();
+
+    String result;
+    switch (action) {
+      case 1: result = userService.setLeaveOfAbsence(target.getUserId()); break;
+      case 2: result = userService.restoreFromLeave(target.getUserId()); break;
+      case 3: result = userService.setTransfer(target.getUserId()); break;
+      case 0: return;
+      default: System.out.println("잘못된 입력입니다."); waitBack(); return;
+    }
+    System.out.println(">> " + result);
+    waitBack();
   }
 
   // ─────────────────────────────────────────────────────
