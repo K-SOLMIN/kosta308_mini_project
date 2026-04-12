@@ -1,18 +1,29 @@
 package com.kimdoolim.manager;
 
+import com.kimdoolim.alarm.AlarmSendingManager;
 import com.kimdoolim.common.Database;
 import com.kimdoolim.common.MySql;
+import com.kimdoolim.dao.ReservationDAO;
+import com.kimdoolim.dto.Reservation;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
 public class BlockPeriodController {
-    private static final BlockPeriodController instance = new BlockPeriodController();
+    //private static final BlockPeriodController instance = new BlockPeriodController();
     private final Database mysql = MySql.getMySql();
 
+    private final ReservationDAO reservationDAO = new ReservationDAO();
+
+    private final AlarmSendingManager sendingManager = AlarmSendingManager.getAlarmSendingManager();
+
+    private static final BlockPeriodController blockPeriodController = new BlockPeriodController();
+
     private BlockPeriodController() {}
-    public static BlockPeriodController getBlockPeriodController() { return instance; }
+    public static BlockPeriodController getBlockPeriodController() {
+        return blockPeriodController;
+    }
 
     // ─────────────────────────────────────────────────────
     // 1. 목록 조회 (교시명 포함)
@@ -92,6 +103,8 @@ public class BlockPeriodController {
             mysql.commit(conn);
         } catch (SQLException e) { mysql.rollback(conn); }
         finally { mysql.close(pstmt); mysql.close(conn); }
+
+        if (count > 0) cancelAndNotifyForBlock(masterId, null, null);
         return count;
     }
 
@@ -104,15 +117,47 @@ public class BlockPeriodController {
         String sql = type.equals("F")
             ? "INSERT INTO block_period_detail (block_period_id, facility_id) VALUES (?, ?)"
             : "INSERT INTO block_period_detail (block_period_id, equipment_id) VALUES (?, ?)";
+        int res = 0;
         try {
             pstmt = conn.prepareStatement(sql);
             pstmt.setLong(1, masterId);
             pstmt.setLong(2, targetId);
-            int res = pstmt.executeUpdate();
+            res = pstmt.executeUpdate();
             mysql.commit(conn);
-            return res;
-        } catch (SQLException e) { mysql.rollback(conn); return 0; }
+        } catch (SQLException e) { mysql.rollback(conn); }
         finally { mysql.close(pstmt); mysql.close(conn); }
+
+        if (res > 0) {
+            Long facilityId  = type.equals("F") ? targetId : null;
+            Long equipmentId = type.equals("E") ? targetId : null;
+            cancelAndNotifyForBlock(masterId, facilityId, equipmentId);
+        }
+        return res;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 제한 일정 등록 후 겹치는 예약 취소 + 사용자 알림
+    // ─────────────────────────────────────────────────────
+    private void cancelAndNotifyForBlock(long masterId, Long facilityId, Long equipmentId) {
+        Map<String, Object> info = getBlockPeriodById(masterId);
+        if (info == null) return;
+
+        LocalDate start    = (LocalDate) info.get("start");
+        LocalDate end      = (LocalDate) info.get("end");
+        Integer periodId   = (Integer)   info.get("periodId");
+        String desc        = (String)    info.get("desc");
+
+        String reason = "제한 일정(" + desc + ")으로 인한 자동 취소";
+        List<Reservation> cancelled = reservationDAO.cancelReservationsForBlockPeriod(
+            start, end, periodId, facilityId, equipmentId, reason);
+
+        for (Reservation r : cancelled) {
+            sendingManager.sendingTextToSocketServer("취소", r.getReservationId(), "BLOCK");
+        }
+
+        if (!cancelled.isEmpty()) {
+            System.out.println("🚫 [제한 일정] " + cancelled.size() + "건의 예약이 자동 취소되었습니다.");
+        }
     }
 
     // ─────────────────────────────────────────────────────
@@ -228,37 +273,80 @@ public class BlockPeriodController {
     // ─────────────────────────────────────────────────────
     // 7. 삭제 — detail 먼저 삭제 후 master 삭제 (FK 오류 방지)
     // ─────────────────────────────────────────────────────
-    public int deleteBlockMasterByDesc(String desc) {
+    public int deleteBlockMasterById(long id) {
         Connection conn = mysql.getConnection();
         PreparedStatement pstmt = null;
         try {
-            // 7-1. master id 조회
-            pstmt = conn.prepareStatement(
-                "SELECT block_period_id FROM block_period WHERE block_period_description = ?");
-            pstmt.setString(1, desc);
-            ResultSet rs = pstmt.executeQuery();
-            if (!rs.next()) { mysql.close(rs); return 0; }
-            long masterId = rs.getLong("block_period_id");
-            mysql.close(rs);
-            mysql.close(pstmt);
-
-            // 7-2. detail 먼저 삭제
+            // detail 먼저 삭제
             pstmt = conn.prepareStatement(
                 "DELETE FROM block_period_detail WHERE block_period_id = ?");
-            pstmt.setLong(1, masterId);
+            pstmt.setLong(1, id);
             pstmt.executeUpdate();
             mysql.close(pstmt);
 
-            // 7-3. master 삭제
+            // master 삭제
             pstmt = conn.prepareStatement(
                 "DELETE FROM block_period WHERE block_period_id = ?");
-            pstmt.setLong(1, masterId);
+            pstmt.setLong(1, id);
             int res = pstmt.executeUpdate();
 
             mysql.commit(conn);
             return res;
         } catch (SQLException e) { mysql.rollback(conn); return 0; }
         finally { mysql.close(pstmt); mysql.close(conn); }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 7. 적용 대상 조회 (시설/비품 이름 목록 + 전체 여부)
+    // ─────────────────────────────────────────────────────
+    public Map<String, Object> getBlockDetailsForDisplay(long masterId) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<String> facilities = new ArrayList<>();
+        List<String> equipments = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 적용된 시설/비품 이름 조회
+            String sql = "SELECT f.name AS facility_name, e.name AS equipment_name " +
+                "FROM block_period_detail bpd " +
+                "LEFT JOIN facility f ON bpd.facility_id = f.facility_id " +
+                "LEFT JOIN equipment e ON bpd.equipment_id = e.equipment_id " +
+                "WHERE bpd.block_period_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, masterId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String fn = rs.getString("facility_name");
+                String en = rs.getString("equipment_name");
+                if (fn != null) facilities.add(fn);
+                if (en != null) equipments.add(en);
+            }
+            mysql.close(rs); rs = null;
+            mysql.close(pstmt); pstmt = null;
+
+            // 전체 시설/비품 수 조회 → 전체 적용 여부 판단
+            pstmt = conn.prepareStatement(
+                "SELECT (SELECT COUNT(*) FROM facility WHERE is_delete = 'false') AS tf, " +
+                "(SELECT COUNT(*) FROM equipment WHERE check_delete = 'false') AS te");
+            rs = pstmt.executeQuery();
+            boolean isAll = false;
+            if (rs.next()) {
+                int totalF = rs.getInt("tf");
+                int totalE = rs.getInt("te");
+                isAll = totalF + totalE > 0
+                    && facilities.size() == totalF
+                    && equipments.size() == totalE;
+            }
+
+            result.put("isAll", isAll);
+            result.put("facilities", facilities);
+            result.put("equipments", equipments);
+
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
+        return result;
     }
 
     // ─────────────────────────────────────────────────────
@@ -332,5 +420,25 @@ public class BlockPeriodController {
         } catch (SQLException e) { e.printStackTrace(); }
         finally { mysql.close(rs); mysql.close(pstmt); mysql.close(conn); }
         return list;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 11. 교시 등록
+    // ─────────────────────────────────────────────────────
+    public int savePeriod(String name, java.time.LocalTime startTime, java.time.LocalTime endTime) {
+        Connection conn = mysql.getConnection();
+        PreparedStatement pstmt = null;
+        int result = 0;
+        try {
+            pstmt = conn.prepareStatement(
+                "INSERT INTO period (period_name, start_time, end_time) VALUES (?, ?, ?)");
+            pstmt.setString(1, name);
+            pstmt.setTime(2, Time.valueOf(startTime));
+            pstmt.setTime(3, Time.valueOf(endTime));
+            result = pstmt.executeUpdate();
+            mysql.commit(conn);
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { mysql.close(pstmt); mysql.close(conn); }
+        return result;
     }
 }

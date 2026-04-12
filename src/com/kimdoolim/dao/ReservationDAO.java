@@ -136,7 +136,7 @@ public class ReservationDAO {
 
     String sql = "SELECT COUNT(*) FROM reservation " +
         "WHERE reservation_date = ? AND period_id = ? " +
-        "AND status NOT IN ('거절', '취소') " +
+        "AND status IN ('승인', '반납완료') " +
         "AND (" +
         "    (target_type = 'FACILITY' AND facility_id = ?)" +
         "    OR (target_type = 'EQUIPMENT' AND equipment_id = ?)" +
@@ -381,7 +381,7 @@ public class ReservationDAO {
   }
 
   // ─────────────────────────────────────────────────────
-  // 12. 예약 승인
+  // 12. 예약 승인 (승인 후 동일 날짜+교시+자원의 대기 예약 자동 반려)
   // ─────────────────────────────────────────────────────
   public int approveReservation(long reservationId) {
     Connection conn = db.getConnection();
@@ -404,9 +404,86 @@ public class ReservationDAO {
       db.close(pstmt); db.close(conn);
     }
 
-    ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":APPROVE");
+    if (result > 0) {
+      ClientMain.out.println("RESERVATION_RESULT:" + reservationId + ":APPROVE");
+      rejectDuplicatesOnApprove(reservationId);
+    }
 
     return result;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 12-1. 승인된 예약과 동일한 날짜+교시+자원의 대기 예약 자동 반려
+  // ─────────────────────────────────────────────────────
+  private void rejectDuplicatesOnApprove(long approvedReservationId) {
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    try {
+      // 승인된 예약 정보 조회
+      pstmt = conn.prepareStatement(
+          "SELECT reservation_date, period_id, target_type, facility_id, equipment_id " +
+          "FROM reservation WHERE reservation_id = ?");
+      pstmt.setLong(1, approvedReservationId);
+      rs = pstmt.executeQuery();
+      if (!rs.next()) return;
+
+      Date resDate   = rs.getDate("reservation_date");
+      int periodId   = rs.getInt("period_id");
+      String type    = rs.getString("target_type");
+      long facilityId  = rs.getLong("facility_id");
+      long equipmentId = rs.getLong("equipment_id");
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      // 중복 대기 예약 ID 조회
+      String findSql = "FACILITY".equals(type)
+          ? "SELECT reservation_id FROM reservation " +
+            "WHERE reservation_date = ? AND period_id = ? AND target_type = 'FACILITY' " +
+            "AND facility_id = ? AND status = '대기' AND reservation_id != ?"
+          : "SELECT reservation_id FROM reservation " +
+            "WHERE reservation_date = ? AND period_id = ? AND target_type = 'EQUIPMENT' " +
+            "AND equipment_id = ? AND status = '대기' AND reservation_id != ?";
+
+      pstmt = conn.prepareStatement(findSql);
+      pstmt.setDate(1, resDate);
+      pstmt.setInt(2, periodId);
+      pstmt.setLong(3, "FACILITY".equals(type) ? facilityId : equipmentId);
+      pstmt.setLong(4, approvedReservationId);
+      rs = pstmt.executeQuery();
+
+      List<Long> duplicateIds = new ArrayList<>();
+      while (rs.next()) duplicateIds.add(rs.getLong("reservation_id"));
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      if (duplicateIds.isEmpty()) return;
+
+      // 일괄 반려
+      pstmt = conn.prepareStatement(
+          "UPDATE reservation SET status = '거절', reason = '중복예약으로 인해 반려되었습니다' " +
+          "WHERE reservation_id = ? AND status = '대기'");
+      for (long dupId : duplicateIds) {
+        pstmt.setLong(1, dupId);
+        pstmt.addBatch();
+      }
+      pstmt.executeBatch();
+      db.commit(conn);
+
+      // 반려 알림 발송
+      for (long dupId : duplicateIds) {
+        ClientMain.out.println("RESERVATION_RESULT:" + dupId + ":REJECT");
+      }
+
+      System.out.println("🔄 [중복 자동 반려] " + duplicateIds.size() + "건 반려 처리되었습니다.");
+
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("중복 예약 자동 반려 실패: " + e.getMessage());
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
   }
 
   // ─────────────────────────────────────────────────────
@@ -653,6 +730,200 @@ public class ReservationDAO {
       db.close(rs); db.close(pstmt); db.close(conn);
     }
     return reason;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 20. 제한 일정으로 인한 예약 일괄 취소
+  //     facilityId, equipmentId 둘 다 null → 전체 시설/비품 대상
+  //     periodId null → 해당 기간 모든 교시 대상
+  // ─────────────────────────────────────────────────────
+  public List<Reservation> cancelReservationsForBlockPeriod(
+      LocalDate startDate, LocalDate endDate, Integer periodId,
+      Long facilityId, Long equipmentId, String cancelReason) {
+
+    List<Reservation> cancelled = new ArrayList<>();
+
+    // SELECT용 WHERE (테이블 alias 사용)
+    StringBuilder selectWhere = new StringBuilder(
+        " WHERE r.reservation_date BETWEEN ? AND ? AND r.status IN ('대기', '승인')");
+    if (periodId != null)         selectWhere.append(" AND r.period_id = ?");
+    if (facilityId != null)       selectWhere.append(" AND r.target_type = 'FACILITY' AND r.facility_id = ?");
+    else if (equipmentId != null) selectWhere.append(" AND r.target_type = 'EQUIPMENT' AND r.equipment_id = ?");
+
+    String selectSql = "SELECT r.reservation_id, r.user_id, u.name AS user_name, " +
+        "r.target_type, COALESCE(f.name, e.name) AS resource_name " +
+        "FROM reservation r " +
+        "JOIN user u ON r.user_id = u.user_id " +
+        "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+        "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        selectWhere;
+
+    // UPDATE용 WHERE (alias 없음)
+    StringBuilder updateWhere = new StringBuilder(
+        " WHERE reservation_date BETWEEN ? AND ? AND status IN ('대기', '승인')");
+    if (periodId != null)         updateWhere.append(" AND period_id = ?");
+    if (facilityId != null)       updateWhere.append(" AND target_type = 'FACILITY' AND facility_id = ?");
+    else if (equipmentId != null) updateWhere.append(" AND target_type = 'EQUIPMENT' AND equipment_id = ?");
+
+    String updateSql = "UPDATE reservation SET status = '취소', reason = ?" + updateWhere;
+
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    try {
+      // 1. 취소 대상 예약 조회
+      pstmt = conn.prepareStatement(selectSql);
+      int idx = 1;
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      if (periodId != null)         pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        String targetType = rs.getString("target_type");
+        String resourceName = rs.getString("resource_name");
+        User user = User.builder()
+            .userId(rs.getInt("user_id"))
+            .name(rs.getString("user_name"))
+            .build();
+        Facility facility = "FACILITY".equals(targetType)
+            ? Facility.builder().name(resourceName).build() : null;
+        Equipment equipment = "EQUIPMENT".equals(targetType)
+            ? Equipment.builder().name(resourceName).build() : null;
+        cancelled.add(Reservation.builder()
+            .reservationId(rs.getLong("reservation_id"))
+            .user(user)
+            .facility(facility)
+            .equipment(equipment)
+            .build());
+      }
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      if (cancelled.isEmpty()) return cancelled;
+
+      // 2. 일괄 취소 UPDATE
+      pstmt = conn.prepareStatement(updateSql);
+      idx = 1;
+      pstmt.setString(idx++, cancelReason);
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      if (periodId != null)         pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      pstmt.executeUpdate();
+      db.commit(conn);
+
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("제한 일정 예약 일괄 취소 실패: " + e.getMessage());
+      cancelled.clear();
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return cancelled;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 21. 반복 요일 차단으로 인한 예약 일괄 취소
+  //     dayOfWeek: MySQL DAYOFWEEK() 기준 (1=일, 2=월 ... 7=토)
+  //     facilityId, equipmentId 둘 다 null → 전체 시설/비품 대상
+  // ─────────────────────────────────────────────────────
+  public List<Reservation> cancelReservationsForRepeatBlock(
+      int dayOfWeek, LocalDate startDate, LocalDate endDate, int periodId,
+      Long facilityId, Long equipmentId, String cancelReason) {
+
+    List<Reservation> cancelled = new ArrayList<>();
+
+    StringBuilder selectWhere = new StringBuilder(
+        " WHERE r.reservation_date BETWEEN ? AND ?" +
+        " AND DAYOFWEEK(r.reservation_date) = ?" +
+        " AND r.period_id = ?" +
+        " AND r.status IN ('대기', '승인')");
+    if (facilityId != null)       selectWhere.append(" AND r.target_type = 'FACILITY' AND r.facility_id = ?");
+    else if (equipmentId != null) selectWhere.append(" AND r.target_type = 'EQUIPMENT' AND r.equipment_id = ?");
+
+    String selectSql = "SELECT r.reservation_id, r.user_id, u.name AS user_name, " +
+        "r.target_type, COALESCE(f.name, e.name) AS resource_name " +
+        "FROM reservation r " +
+        "JOIN user u ON r.user_id = u.user_id " +
+        "LEFT JOIN facility f ON r.facility_id = f.facility_id " +
+        "LEFT JOIN equipment e ON r.equipment_id = e.equipment_id " +
+        selectWhere;
+
+    StringBuilder updateWhere = new StringBuilder(
+        " WHERE reservation_date BETWEEN ? AND ?" +
+        " AND DAYOFWEEK(reservation_date) = ?" +
+        " AND period_id = ?" +
+        " AND status IN ('대기', '승인')");
+    if (facilityId != null)       updateWhere.append(" AND target_type = 'FACILITY' AND facility_id = ?");
+    else if (equipmentId != null) updateWhere.append(" AND target_type = 'EQUIPMENT' AND equipment_id = ?");
+
+    String updateSql = "UPDATE reservation SET status = '취소', reason = ?" + updateWhere;
+
+    Connection conn = db.getConnection();
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    try {
+      pstmt = conn.prepareStatement(selectSql);
+      int idx = 1;
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      pstmt.setInt(idx++, dayOfWeek);
+      pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      rs = pstmt.executeQuery();
+      while (rs.next()) {
+        String targetType = rs.getString("target_type");
+        String resourceName = rs.getString("resource_name");
+        User user = User.builder()
+            .userId(rs.getInt("user_id"))
+            .name(rs.getString("user_name"))
+            .build();
+        Facility facility = "FACILITY".equals(targetType)
+            ? Facility.builder().name(resourceName).build() : null;
+        Equipment equipment = "EQUIPMENT".equals(targetType)
+            ? Equipment.builder().name(resourceName).build() : null;
+        cancelled.add(Reservation.builder()
+            .reservationId(rs.getLong("reservation_id"))
+            .user(user)
+            .facility(facility)
+            .equipment(equipment)
+            .build());
+      }
+      db.close(rs); rs = null;
+      db.close(pstmt); pstmt = null;
+
+      if (cancelled.isEmpty()) return cancelled;
+
+      pstmt = conn.prepareStatement(updateSql);
+      idx = 1;
+      pstmt.setString(idx++, cancelReason);
+      pstmt.setDate(idx++, Date.valueOf(startDate));
+      pstmt.setDate(idx++, Date.valueOf(endDate));
+      pstmt.setInt(idx++, dayOfWeek);
+      pstmt.setInt(idx++, periodId);
+      if (facilityId != null)       pstmt.setLong(idx++, facilityId);
+      else if (equipmentId != null) pstmt.setLong(idx++, equipmentId);
+
+      pstmt.executeUpdate();
+      db.commit(conn);
+
+    } catch (SQLException e) {
+      db.rollback(conn);
+      System.out.println("반복 요일 차단 예약 일괄 취소 실패: " + e.getMessage());
+      cancelled.clear();
+    } finally {
+      db.close(rs); db.close(pstmt); db.close(conn);
+    }
+    return cancelled;
   }
 
   // ─────────────────────────────────────────────────────

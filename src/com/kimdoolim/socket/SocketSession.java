@@ -10,6 +10,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -114,16 +116,18 @@ public class SocketSession extends Thread {
 
         AlarmScheduler.getAlarmScheduler().cancelReservationAlarm(resId);
 
-        if ("ADMIN".equals(cancelType)) {
+        if ("ADMIN".equals(cancelType) || "BLOCK".equals(cancelType)) {
             int userId = reservation.getUser().getUserId();
             String targetType = reservation.getFacility() != null ? "시설" : "비품";
             String targetName = reservation.getFacility() != null
                     ? reservation.getFacility().getName()
                     : reservation.getEquipment().getName();
 
-            String msg = "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 관리자에 의해 취소되었습니다.";
+            String msg = "BLOCK".equals(cancelType)
+                    ? "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 제한 일정으로 인해 자동 취소되었습니다."
+                    : "📩 [예약취소] " + targetType + " '" + targetName + "' 예약이 관리자에 의해 취소되었습니다.";
             alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
-            System.out.println("❌ [관리자 강제취소] 예약 ID: " + resId + " → 사용자 " + userId + " 알림 완료");
+            System.out.println("❌ [" + cancelType + " 취소] 예약 ID: " + resId + " → 사용자 " + userId + " 알림 완료");
         } else {
             System.out.println("❌ [사용자 취소] 예약 ID: " + resId + " 스케줄만 취소");
         }
@@ -203,6 +207,18 @@ public class SocketSession extends Thread {
             String msg = "✅ [예약결과] " + targetType + " '" + targetName + "' 예약이 승인되었습니다!";
             alarmService.sendAndSaveAlarm(userId, msg, "예약안내");
             AlarmScheduler.getAlarmScheduler().addReservationAlarm(reservation);
+
+            // 오늘 날짜이고 현재 시간이 교시 안에 있으면 즉시 사용 가능 알림
+            LocalDate today = LocalDate.now();
+            LocalTime now = LocalTime.now();
+            if (reservation.getReservationDate().isEqual(today)
+                    && !now.isBefore(reservation.getPeriod().getStartTime())
+                    && !now.isAfter(reservation.getPeriod().getEndTime())) {
+                String useNowMsg = "🟢 [사용안내] '" + targetName + "' 바로 사용이 가능합니다!";
+                alarmService.sendAndSaveAlarm(userId, useNowMsg, "사용안내");
+                System.out.println("🟢 [즉시 사용 가능 알림] " + userId + "번 사용자에게 전송 완료");
+            }
+
             System.out.println("📅 [승인 완료] ID: " + resId + " 스케줄 등록 및 사용자 알림 전송");
 
         } else if ("REJECT".equals(status)) {

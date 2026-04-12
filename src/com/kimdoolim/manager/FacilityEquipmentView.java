@@ -182,13 +182,13 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(93) : "─".repeat(82);
+    String div = isAdmin ? "─".repeat(95) : "─".repeat(82);
     System.out.println(div);
     if (isAdmin) {
       System.out.println(fit("번호", 4) + " " + fit("비품명", 14) + " " +
           fit("위치", 12) + " " + fit("수량", 6) + " " +
           fit("시리얼(기본)", 18) + " " + fit("상태", 8) + " " +
-          fit("낱개현황", 16) + " " + fit("담당자", 10));
+          fit("낱개현황", 16) + " " + fit("담당자", 12));
     } else {
       System.out.println(fit("번호", 4) + " " + fit("비품명", 14) + " " +
           fit("위치", 12) + " " + fit("수량", 6) + " " +
@@ -200,20 +200,34 @@ public class FacilityEquipmentView {
       String qtyStr     = e.getQuantity() > 0 ? e.getQuantity() + "개" : "-";
       String summaryStr = (e.getStatusSummary() != null && !e.getStatusSummary().isEmpty())
           ? e.getStatusSummary() : "-";
+      boolean summaryOverflow = displayWidth(summaryStr) > 16;
+      String summaryCol = summaryOverflow ? "(상세↓)" : summaryStr;
       if (isAdmin) {
         String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
         System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
             fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
             fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
-            fit(summaryStr, 16) + " " + fit(managerName, 10));
+            fit(summaryCol, 16) + " " + fit(managerName, 12));
       } else {
         System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
             fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
             fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
-            fit(summaryStr, 16));
+            fit(summaryCol, 16));
+      }
+      if (summaryOverflow) {
+        System.out.println("      └ 낱개현황: " + summaryStr);
       }
     }
     System.out.println(div);
+  }
+
+  /** 한글 2칸, ASCII 1칸으로 문자열의 display width 계산 */
+  private int displayWidth(String s) {
+    int dw = 0;
+    for (char c : s.toCharArray()) {
+      dw += (c >= '\uAC00' && c <= '\uD7A3') ? 2 : 1;
+    }
+    return dw;
   }
 
   // ─────────────────────────────────────────────────────

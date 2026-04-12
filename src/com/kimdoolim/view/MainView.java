@@ -4,6 +4,7 @@ import com.kimdoolim.alarm.AlarmService;
 import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;
 import com.kimdoolim.main.ClientMain;
+import com.kimdoolim.manager.BlockPeriodController;
 import com.kimdoolim.manager.BlockPeriodManageView;
 import com.kimdoolim.manager.BlockScheduleView;
 import com.kimdoolim.manager.FacilityEquipmentView;
@@ -11,6 +12,10 @@ import com.kimdoolim.manager.ManagerReservationView;
 import com.kimdoolim.view.MainView;
 
 import java.io.IOException;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class MainView {
@@ -139,11 +144,75 @@ public class MainView {
                 case 6: new FacilityEquipmentView().facilityEquipmentMenu(); break;
                 case 7: new UserManageView().userManageMenu(); break;
                 case 8: new BlockPeriodManageView().blockPeriodManageView(); break;
+                case 9: registerPeriodFlow(); break;
                 case 0:
                     System.out.println("프로그램을 종료합니다.");
                     closeSocket(); return;
                 default: System.out.println("잘못된 입력입니다. 다시 선택해주세요.");
             }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // 교시 등록 (숨김 메뉴 - 발표용)
+    // ─────────────────────────────────────────────────────
+    private void registerPeriodFlow() {
+        AppScanner.cls();
+        BlockPeriodController ctrl = BlockPeriodController.getBlockPeriodController();
+
+        System.out.println("──────────────────────────────────────");
+        System.out.println("          [ 교시 등록 ]");
+        System.out.println("──────────────────────────────────────");
+
+        List<Map<String, Object>> existing = ctrl.getAllPeriods();
+        if (!existing.isEmpty()) {
+            System.out.println(" 현재 등록된 교시:");
+            for (Map<String, Object> p : existing) {
+                System.out.printf("   %s  (%s ~ %s)%n", p.get("name"), p.get("startTime"), p.get("endTime"));
+            }
+            System.out.println("──────────────────────────────────────");
+        }
+
+        System.out.print("교시 이름 (예: 1교시): ");
+        String name = scanner.nextLine().trim();
+        if (name.isEmpty()) { System.out.println("취소되었습니다."); waitBack(); return; }
+
+        LocalTime startTime = askTime("시작 시간 (HH:mm)");
+        if (startTime == null) { waitBack(); return; }
+
+        LocalTime endTime = askTime("종료 시간 (HH:mm)");
+        if (endTime == null) { waitBack(); return; }
+
+        System.out.printf("%n> %s  %s ~ %s%n", name, startTime, endTime);
+        System.out.print("등록하시겠습니까? (Y/N): ");
+        if (!scanner.nextLine().trim().toUpperCase().equals("Y")) {
+            System.out.println("취소되었습니다.");
+            waitBack();
+            return;
+        }
+
+        int result = ctrl.savePeriod(name, startTime, endTime);
+        System.out.println(result > 0 ? ">> 교시가 등록되었습니다." : ">> 등록에 실패했습니다.");
+        waitBack();
+    }
+
+    private LocalTime askTime(String prompt) {
+        while (true) {
+            System.out.print(prompt + ": ");
+            String input = scanner.nextLine().trim();
+            try {
+                return LocalTime.parse(input);
+            } catch (DateTimeParseException e) {
+                System.out.println("  시간 형식이 올바르지 않습니다. (예: 09:00)");
+            }
+        }
+    }
+
+    private void waitBack() {
+        while (true) {
+            System.out.println(" 0. 뒤로가기");
+            System.out.print("선택: ");
+            if ("0".equals(scanner.nextLine().trim())) return;
         }
     }
 
