@@ -38,7 +38,7 @@ public class AlarmSendingManager {
             return;
         }
 
-        System.out.println("[AlarmSendingManager] 전송 시도: type=" + type + ", param=" + parameter);
+        //System.out.println("[AlarmSendingManager] 전송 시도: type=" + type + ", param=" + parameter);
         if (type.equals("예약요청")) ClientMain.out.println("REQUEST_RESERVATION:" + parameter);
         else if (type.equals("취소")) {
             String suffix = (cancelType != null) ? ":" + cancelType : ":USER";
@@ -46,7 +46,7 @@ public class AlarmSendingManager {
         }
         else if (type.equals("사용시작"))  ClientMain.out.println("USE_START:" + parameter);
         else if (type.equals("요청결과"))  ClientMain.out.println("RESERVATION_RESULT:" + parameter);
-        else System.out.println("[AlarmSendingManager] 알 수 없는 타입: " + type);
+        //else System.out.println("[AlarmSendingManager] 알 수 없는 타입: " + type);
     }
 }
 
