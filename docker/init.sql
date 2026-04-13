@@ -341,3 +341,15 @@ INSERT INTO equipmentdetail (equipment_id, check_delete, serial_no, status)
 VALUES
     (6, 'false', 'minjoong-001', '정상'),
     (6, 'false', 'minjoong-002', '정상');
+
+-- cancel 유저 추가
+INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, class_no, is_active, user_status)
+VALUES (1, 'cancel', '1234', 'USER', '취소유저', '010-7777-7777', 3, 3, 'true', 'ACTIVE');
+
+-- cancel 유저의 예약 2건 (suji 시설 = facility_id 6, period_id 1 = 1교시, user_id는 마지막 INSERT 기준)
+-- cancel 유저 user_id = 9 (기존 user01=7, user02=8, user03=9 이므로 cancel=10)
+INSERT INTO reservation (period_id, user_id, facility_id, equipment_id, purpose, reservation_date, status, real_use, target_type, approved_at)
+VALUES (1, 10, 6, NULL, '시현용 예약', '2026-04-13', '승인', 'false', 'FACILITY', NOW());
+
+INSERT INTO reservation (period_id, user_id, facility_id, equipment_id, purpose, reservation_date, status, real_use, target_type, approved_at)
+VALUES (1, 10, 6, NULL, '시현용 예약', '2026-05-13', '승인', 'false', 'FACILITY', NOW());
