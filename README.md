@@ -216,3 +216,7 @@ TCP 소켓(포트 9999) 기반 실시간 알림 시스템입니다.
 - MySQL 8.x (Docker)
 - IntelliJ IDEA
 - Windows 11
+
+## test
+- 2026-04-13 periodId = 1 user = cancel
+- 2026-05-13 periodId = 1 user = cancel
