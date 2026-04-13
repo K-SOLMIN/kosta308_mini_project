@@ -256,20 +256,19 @@ INSERT INTO user (school_id, id, password, permission, name, phone, grade_no, cl
 VALUES
     (1, 'user01', '1234', 'USER', '유공일', '010-6666-6666', 6, 3, 'true', 'ACTIVE'),
     (1, 'user02', '1234', 'USER', '유공이', '010-6666-6666', 6, 2, 'true', 'ACTIVE'),
-(1, 'user03', '1234', 'USER', '유공삼', '010-6666-6666', 6, 1, 'true', 'ACTIVE');
+    (1, 'user03', '1234', 'USER', '유공삼', '010-6666-6666', 6, 1, 'true', 'ACTIVE'),
+    (1, 'cancel', '1234', 'USER', '취소유저', '010-7777-7777', 3, 3, 'true', 'ACTIVE');
 
 -- 교시 (period)
 INSERT INTO period (period_name, start_time, end_time)
 VALUES
-    ('1교시', '09:00:00', '10:00:00'),
-    ('2교시', '10:10:00', '11:10:00'),
-    ('3교시', '11:20:00', '12:20:00'),
-    ('4교시', '13:20:00', '14:20:00'),
-    ('5교시', '14:30:00', '15:30:00'),
-    ('6교시', '15:40:00', '16:40:00'),
-    ('test1교시', '18:25:00', '18:40:00'),
-    ('test2교시', '18:50:00', '19:10:00'),
-    ('test3교시', '19:20:00', '19:50:00');
+    ('1교시', '09:00:00', '09:40:00'),
+    ('2교시', '09:50:00', '10:30:00'),
+    ('3교시', '10:40:00', '11:20:00'),
+    ('4교시', '11:30:00', '12:10:00'),
+    ('점심', '12:20:00', '12:50:00'),
+    ('5교시', '13:00:00', '13:40:00'),
+    ('6교시', '13:50:00', '14:30:00');
 
 -- 시설 (facility) — manager1(user_id=2) 담당
 INSERT INTO facility (manager_id, location, name, max_capacity, max_reservation_unit, max_reservation_value, is_delete, status)
@@ -312,16 +311,16 @@ VALUES
 -- 시설 추가 — solmin(user_id=5) / suji(user_id=4) / minjoong(user_id=6) 담당
 INSERT INTO facility (manager_id, location, name, max_capacity, max_reservation_unit, max_reservation_value, is_delete, status)
 VALUES
-    (5, '3층 서쪽',   'solmin facility',   30, '일', 2, 'false', '정상'),
-    (4, '3층 동쪽',     'suji facility',     20, '일', 2, 'false', '정상'),
-    (6, '별관 2층', 'minjoong facility', 25, '일', 2, 'false', '정상');
+    (5, '3층 서쪽',   'solmin 시설',   30, '일', 2, 'false', '정상'),
+    (4, '3층 동쪽',     'suji 시설',     20, '일', 2, 'false', '정상'),
+    (6, '별관 2층', 'minjoong 시설', 25, '일', 2, 'false', '정상');
 
 -- 비품 추가 — solmin(user_id=5) / suji(user_id=4) / minjoong(user_id=6) 담당
 INSERT INTO equipment (manager_id, name, location, check_delete, serial_no, status)
 VALUES
-    (5, 'solmin 비품',   'solmin location',   'false', 'solmin',   '정상'),
-    (4, 'suji 비품',     'suji location',     'false', 'suji',     '정상'),
-    (6, 'minjoong 비품', 'minjoong location', 'false', 'minjoong', '정상');
+    (5, 'solmin 비품',   '1층 중앙',   'false', 'solmin',   '정상'),
+    (4, 'suji 비품',     '3층 본관',     'false', 'suji',     '정상'),
+    (6, 'minjoong 비품', '3층 별관', 'false', 'minjoong', '정상');
 
 -- solmin equipment 낱개 3개 (equipment_id=4)
 INSERT INTO equipmentdetail (equipment_id, check_delete, serial_no, status)

@@ -1,19 +1,16 @@
 package com.kimdoolim.manager;
 
 import com.kimdoolim.common.AppScanner;
-import static com.kimdoolim.common.AppScanner.fit;
 import com.kimdoolim.common.Auth;
-import com.kimdoolim.dto.Equipment;
-import com.kimdoolim.dto.EquipmentDetail;
-import com.kimdoolim.dto.Facility;
-import com.kimdoolim.dto.Permission;
-import com.kimdoolim.dto.User;
+import com.kimdoolim.dto.*;
 import com.kimdoolim.service.FacilityEquipmentService;
 import com.kimdoolim.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import static com.kimdoolim.common.AppScanner.fit;
 
 public class FacilityEquipmentView {
 
@@ -136,27 +133,27 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(63) : "─".repeat(52);
+    String div = isAdmin ? "─".repeat(100) : "─".repeat(75);
     System.out.println(div);
     if (isAdmin) {
-      System.out.println(fit("번호", 4) + " " + fit("시설명", 16) + " " +
-          fit("위치", 12) + " " + fit("수용인원", 8) + " " + fit("상태", 8) + " " + fit("담당자", 10));
+      System.out.println(fit("번호", 4) + " " + fit("시설명", 20) + " " +
+              fit("위치", 20) + " " + fit("수용인원", 8) + " " + fit("상태", 8) + " " + fit("담당자", 15));
     } else {
-      System.out.println(fit("번호", 4) + " " + fit("시설명", 16) + " " +
-          fit("위치", 12) + " " + fit("수용인원", 8) + " " + fit("상태", 8));
+      System.out.println(fit("번호", 4) + " " + fit("시설명", 20) + " " +
+              fit("위치", 20) + " " + fit("수용인원", 8) + " " + fit("상태", 8));
     }
     System.out.println(div);
     for (int i = 0; i < list.size(); i++) {
       Facility f = list.get(i);
       if (isAdmin) {
         String managerName = (f.getUser() != null) ? f.getUser().getName() : "담당자 없음";
-        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 16) + " " +
-            fit(f.getLocation(), 12) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
-            fit(f.getStatus(), 8) + " " + fit(managerName, 10));
+        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 20) + " " +
+                fit(f.getLocation(), 20) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
+                fit(f.getStatus(), 8) + " " + fit(managerName, 15));
       } else {
-        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 16) + " " +
-            fit(f.getLocation(), 12) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
-            fit(f.getStatus(), 8));
+        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(f.getName(), 20) + " " +
+                fit(f.getLocation(), 20) + " " + fit(f.getMaxCapacity() + "명", 8) + " " +
+                fit(f.getStatus(), 8));
       }
     }
     System.out.println(div);
@@ -182,37 +179,37 @@ public class FacilityEquipmentView {
       return;
     }
 
-    String div = isAdmin ? "─".repeat(95) : "─".repeat(82);
+    String div = isAdmin ? "─".repeat(120) : "─".repeat(105);
     System.out.println(div);
     if (isAdmin) {
-      System.out.println(fit("번호", 4) + " " + fit("비품명", 14) + " " +
-          fit("위치", 12) + " " + fit("수량", 6) + " " +
-          fit("시리얼(기본)", 18) + " " + fit("상태", 8) + " " +
-          fit("낱개현황", 16) + " " + fit("담당자", 12));
+      System.out.println(fit("번호", 4) + " " + fit("비품명", 20) + " " +
+              fit("위치", 20) + " " + fit("수량", 6) + " " +
+              fit("시리얼(기본)", 25) + " " + fit("상태", 8) + " " +
+              fit("낱개현황", 16) + " " + fit("담당자", 15));
     } else {
-      System.out.println(fit("번호", 4) + " " + fit("비품명", 14) + " " +
-          fit("위치", 12) + " " + fit("수량", 6) + " " +
-          fit("시리얼(기본)", 18) + " " + fit("상태", 8) + " " + fit("낱개현황", 16));
+      System.out.println(fit("번호", 4) + " " + fit("비품명", 20) + " " +
+              fit("위치", 20) + " " + fit("수량", 6) + " " +
+              fit("시리얼(기본)", 25) + " " + fit("상태", 8) + " " + fit("낱개현황", 16));
     }
     System.out.println(div);
     for (int i = 0; i < list.size(); i++) {
       Equipment e = list.get(i);
       String qtyStr     = e.getQuantity() > 0 ? e.getQuantity() + "개" : "-";
       String summaryStr = (e.getStatusSummary() != null && !e.getStatusSummary().isEmpty())
-          ? e.getStatusSummary() : "-";
+              ? e.getStatusSummary() : "-";
       boolean summaryOverflow = displayWidth(summaryStr) > 16;
       String summaryCol = summaryOverflow ? "(상세↓)" : summaryStr;
       if (isAdmin) {
         String managerName = (e.getUser() != null) ? e.getUser().getName() : "담당자 없음";
-        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
-            fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
-            fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
-            fit(summaryCol, 16) + " " + fit(managerName, 12));
+        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 20) + " " +
+                fit(e.getLocation(), 20) + " " + fit(qtyStr, 6) + " " +
+                fit(e.getSerialNo(), 25) + " " + fit(e.getStatus(), 8) + " " +
+                fit(summaryCol, 16) + " " + fit(managerName, 15));
       } else {
-        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 14) + " " +
-            fit(e.getLocation(), 12) + " " + fit(qtyStr, 6) + " " +
-            fit(e.getSerialNo(), 18) + " " + fit(e.getStatus(), 8) + " " +
-            fit(summaryCol, 16));
+        System.out.println(fit(String.valueOf(i + 1), 4) + " " + fit(e.getName(), 20) + " " +
+                fit(e.getLocation(), 20) + " " + fit(qtyStr, 6) + " " +
+                fit(e.getSerialNo(), 25) + " " + fit(e.getStatus(), 8) + " " +
+                fit(summaryCol, 16));
       }
       if (summaryOverflow) {
         System.out.println("      └ 낱개현황: " + summaryStr);
