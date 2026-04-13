@@ -312,16 +312,16 @@ VALUES
 -- 시설 추가 — solmin(user_id=5) / suji(user_id=4) / minjoong(user_id=6) 담당
 INSERT INTO facility (manager_id, location, name, max_capacity, max_reservation_unit, max_reservation_value, is_delete, status)
 VALUES
-    (5, 'solmin location',   'solmin facility',   30, '일', 2, 'false', '정상'),
-    (4, 'suji location',     'suji facility',     20, '일', 2, 'false', '정상'),
-    (6, 'minjoong location', 'minjoong facility', 25, '일', 2, 'false', '정상');
+    (5, '3층 서쪽',   'solmin facility',   30, '일', 2, 'false', '정상'),
+    (4, '3층 동쪽',     'suji facility',     20, '일', 2, 'false', '정상'),
+    (6, '별관 2층', 'minjoong facility', 25, '일', 2, 'false', '정상');
 
 -- 비품 추가 — solmin(user_id=5) / suji(user_id=4) / minjoong(user_id=6) 담당
 INSERT INTO equipment (manager_id, name, location, check_delete, serial_no, status)
 VALUES
-    (5, 'solmin equipment',   'solmin location',   'false', 'solmin',   '정상'),
-    (4, 'suji equipment',     'suji location',     'false', 'suji',     '정상'),
-    (6, 'minjoong equipment', 'minjoong location', 'false', 'minjoong', '정상');
+    (5, 'solmin 비품',   'solmin location',   'false', 'solmin',   '정상'),
+    (4, 'suji 비품',     'suji location',     'false', 'suji',     '정상'),
+    (6, 'minjoong 비품', 'minjoong location', 'false', 'minjoong', '정상');
 
 -- solmin equipment 낱개 3개 (equipment_id=4)
 INSERT INTO equipmentdetail (equipment_id, check_delete, serial_no, status)

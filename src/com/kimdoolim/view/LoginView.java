@@ -2,9 +2,10 @@ package com.kimdoolim.view;
 
 import com.kimdoolim.common.AppScanner;
 import com.kimdoolim.common.Auth;
-import static com.kimdoolim.common.AppScanner.*;
 
 import java.util.Scanner;
+
+import static com.kimdoolim.common.AppScanner.*;
 
 public class LoginView {
 
@@ -39,20 +40,20 @@ public class LoginView {
         AppScanner.cls();
         System.out.println(BLUE + "================================================================================" + RESET);
         System.out.println();
-        System.out.println(CYAN + "               ███  ███  █ █  ███  ███  █     ███  ███  ███  ███" + RESET);
-        System.out.println(CYAN + "               █    █    █ █  █ █  █ █  █     █    █ █  █ █  █  " + RESET);
-        System.out.println(CYAN + "               ███  █    ███  █ █  █ █  █     █    ███  ███  ███" + RESET);
-        System.out.println(CYAN + "                 █  █    █ █  █ █  █ █  █     █    █ █  ██   █  " + RESET);
-        System.out.println(CYAN + "               ███  ███  █ █  ███  ███  ███   ███  █ █  █ █  ███" + RESET);
+        System.out.println(CYAN + "              ███████   ███████   ██       ████████   ██   ██        " + RESET);
+        System.out.println(CYAN + "              ██        ██   ██   ██          ██      ███ ███        " + RESET);
+        System.out.println(CYAN + "              ███████   ██████    ██          ██      ██ █ ██        " + RESET);
+        System.out.println(CYAN + "                   ██   ██   ██   ██          ██      ██   ██        " + RESET);
+        System.out.println(CYAN + "              ███████   ██████    ███████   ███████   ██   ██        " + RESET);
         System.out.println();
-        System.out.println(BOLD + CYAN + "                          ★   스  쿨  케  어   ★                              " + RESET);
+        System.out.println(BOLD + CYAN + "                          ★        S B L I M        ★                        " + RESET);
         System.out.println();
-        System.out.println(BLUE + "                      학교 시설 및 비품 예약 관리 시스템                      " + RESET);
+        System.out.println(BLUE + "                    학교 시설 및 비품 예약 관리 시스템                    " + RESET);
         System.out.println();
-        System.out.println(CYAN + "                           [ Enter 를 눌러주세요 ]                         " + RESET);
+        System.out.println(CYAN + "                         [ Enter 를 눌러주세요 ]                         " + RESET);
         System.out.println();
         System.out.println(BLUE + "================================================================================" + RESET);
         scanner.nextLine();
-
     }
+
 }
